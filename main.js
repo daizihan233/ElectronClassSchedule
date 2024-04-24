@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain, dialog, screen, Tray, shell } = require('electron')
+const { app, BrowserWindow, Menu, ipcMain, dialog, screen, Tray, shell, net} = require('electron')
 const path = require('path');
 const fs = require('fs')
 const os = require('os')
@@ -16,6 +16,7 @@ let basePath = app.isPackaged ? './resources/app/' : './'
 if (!app.requestSingleInstanceLock({ key: 'classSchedule' })) {
     app.quit();
 }
+app.commandLine.appendSwitch("--disable-http-cache");
 const createWindow = () => {
     win = new BrowserWindow({
         x: 0,
@@ -63,6 +64,24 @@ app.whenReady().then(() => {
     Menu.setApplicationMenu(null)
     win.webContents.on('did-finish-load', () => {
         win.webContents.send('getWeekIndex');
+        if (store.get("isFromCloud", false)) {
+            let scheduleConfigSync;
+            const { net } = require('electron')
+            const url = store.get('url', "https://class.khbit.cn/")
+            console.log(url)
+            const request = net.request(url)
+            request.on('response', (response) => {
+                response.on('data', (chunk) => {
+                    scheduleConfigSync = JSON.parse(chunk.toString())
+                    console.log(scheduleConfigSync)
+                })
+                response.on('end', () => {
+                    console.log('No more data in response.')
+                    win.webContents.send("newConfig", scheduleConfigSync)
+                })
+            })
+            request.end()
+        }
     })
     const handle = win.getNativeWindowHandle();
     DisableMinimize(handle); // Thank to peter's project https://github.com/tbvjaos510/electron-disable-minimize
@@ -125,6 +144,13 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             }
         },
         {
+            icon: basePath + 'image/toggle.png',
+            label: '云端链接',
+            click: () => {
+                win.webContents.send('fromCloud')
+            }
+        },
+        {
             icon: basePath + 'image/github.png',
             label: '源码仓库',
             click: () => {
@@ -172,6 +198,14 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             click: (e) => {
                 store.set('isAutoLaunch', e.checked)
                 setAutoLaunch()
+            }
+        },
+        {
+            label: '云端获取',
+            type: 'checkbox',
+            checked: store.get('isFromCloud', false),
+            click: (e) => {
+                store.set('isFromCloud', e.checked)
             }
         },
         {
@@ -245,3 +279,27 @@ ipcMain.on('getTimeOffset', (e, arg) => {
         }
     })
 })
+
+ipcMain.on('fromCloud', (e, arg) => {
+    prompt({
+        title: '云端链接',
+        label: '请设置云端链接:',
+        value: arg.toString(),
+        inputAttrs: {
+            type: 'string'
+        },
+        type: 'input',
+        height: 180,
+        width: 400,
+        icon: basePath + 'image/toggle.png',
+    }).then((r) => {
+        if (r === null) {
+            console.log('[Cloud] User cancelled');
+        } else {
+            win.webContents.send('setCloudUrl', r.toString())
+            store.set("url", r.toString())
+            console.log('[Cloud] ', r.toString());
+        }
+    })
+})
+
