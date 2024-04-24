@@ -6,10 +6,13 @@
   "author": "lsl",
   "license": "GPLv3",
   "scripts": {
-    "start": "electron .",
+    "debug": "chcp 65001 && electron . --enable-logging",
+    "start": "chcp 65001 && electron .",
+    "rebuild": "electron-rebuild",
     "build": "electron-packager . classSchedule --platform=win32 --arch=x64 --out=./out --app-version=0.0.1 --overwrite"
   },
   "devDependencies": {
+    "@electron-forge/cli": "^7.4.0",
     "@electron/rebuild": "^3.6.0",
     "electron-packager": "^17.1.2"
   },

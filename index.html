@@ -50,6 +50,8 @@
   let root = document.querySelector(':root');
   let isClassCountdown = true
   let isClassHidden = true
+  let url = null
+  let isFromCloud = false
   let lastScheduleData = {
     currentHighlight: {
       index: null,
@@ -87,6 +89,7 @@
     }
     classContainer.innerHTML = classHtml
   }
+
 
   function setBackgroundDisplay() {
     let elements = document.getElementsByClassName('background')
@@ -285,6 +288,22 @@
     localStorage.setItem('timeOffset', arg.toString())
   })
 
+  ipcRenderer.on('fromCloud', (e, arg) => {
+    let uri = localStorage.getItem('url');
+    ipcRenderer.send('fromCloud', uri === null ? "https://class.khbit.cn/" : uri.toString())
+  })
+
+  ipcRenderer.on('setCloudUrl', (e, arg) => {
+    url = arg
+    localStorage.setItem('url', arg.toString())
+  })
+
+  ipcRenderer.on('newConfig', (e, arg) => {
+    scheduleConfig = arg
+    scheduleData = getScheduleData();
+    setScheduleClass()
+  })
+
   ipcRenderer.on('ClassCountdown', (e, arg) => {
     isClassCountdown = arg
     tick(reset = true)
@@ -308,7 +327,7 @@
   })
 
   ipcRenderer.on('getDayOffset', (e, arg) => {
-    if (arg.index == -1) return
+    if (arg.index === -1) return
     if (arg.index <= 6) {
       localStorage.setItem('dayOffset', arg.index.toString())
       localStorage.setItem('setDayOffsetLastDay', new Date().getDay().toString())
