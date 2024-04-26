@@ -73,12 +73,13 @@
         inner = `<div><div style="display:inline">${inner.split('@')[0]}</div><div class="subClass">${inner.split('@')[1]}</div></div>`
       }
       if (scheduleData.currentHighlight.index == i) {
-        if (scheduleData.currentHighlight.type === 'current')
+        if (scheduleData.currentHighlight.isEnd)
+          classHtml += `<div class="class" id="highlighted" style="color:rgba(166,166,166);">${inner}</div>`
+        else if (scheduleData.currentHighlight.type === 'current')
           classHtml += `<div class="class current" id="highlighted">${inner}</div>`
         else if (scheduleData.currentHighlight.type === 'upcoming')
           classHtml += `<div class="class upcoming" id="highlighted">${inner}</div>`
-      }
-      else {
+      } else {
         if (scheduleData.currentHighlight.index > i)
           classHtml += `<div class="class" style="color:rgba(166,166,166);">${inner}</div>`
         else
