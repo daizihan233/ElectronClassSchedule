@@ -70,17 +70,25 @@ app.whenReady().then(() => {
             const url = store.get('url', "https://class.khbit.cn/")
             console.log(url)
             const request = net.request(url)
-            request.on('response', (response) => {
-                response.on('data', (chunk) => {
-                    scheduleConfigSync = JSON.parse(chunk.toString())
-                    console.log(scheduleConfigSync)
-                })
-                response.on('end', () => {
-                    console.log('No more data in response.')
-                    win.webContents.send("newConfig", scheduleConfigSync)
-                })
-            })
-            request.end()
+            let stat = true
+            while (stat) {
+                try {
+                    request.on('response', (response) => {
+                        response.on('data', (chunk) => {
+                            scheduleConfigSync = JSON.parse(chunk.toString())
+                            console.log(scheduleConfigSync)
+                        })
+                        response.on('end', () => {
+                            console.log('No more data in response.')
+                            win.webContents.send("newConfig", scheduleConfigSync)
+                        })
+                    })
+                    request.end()
+                    stat = false
+                } catch (e) {
+                    console.log(e)
+                }
+            }
         }
     })
     const handle = win.getNativeWindowHandle();
