@@ -27,7 +27,7 @@
       </div>
     </div>
     <div class="leftSidebar sidebar background" id="leftSidebar"><span id="weekEN" class="t">Load</span><div class="corner options notIgnoreClick" id="weekCH">ing</div></div>
-    <div class="rightSidebar sidebar background" id="rightSidebar"><span id="countdownDays" class="t">000</span><div class="corner">天</div></div>
+    <div class="rightSidebar sidebar background" id="rightSidebar"><span id="countdownDays" class="t">000</span><div class="corner" id="corunit">天</div></div>
   </div>
   <div class="miniCountdown" id="miniCountdown">00:00</div>
 
@@ -39,6 +39,7 @@
   let classContainer = document.getElementById('classContainer')
   let countdownContainer = document.getElementById('countdownContainer')
   let countdowner = document.getElementById('countdowner')
+  let corunit = document.getElementById('corunit')
   let currentFullName = document.getElementById('currentFullName')
   let countdownText = document.getElementById('countdownText')
   let weekEN = document.getElementById('weekEN')
@@ -162,7 +163,9 @@
     weekCH.innerText = data.Chinese
     weekEN.innerText = data.English
     if (scheduleConfig.countdown_target === 'hidden') {
-      rightSidebar.style.display = 'none'
+      rightSidebar.style.display = 'block'
+      countdownDays.innerText = (date.getMonth() + 1) + " 月 " + date.getDate() + " 日"
+      corunit.innerText = ""
     } else {
       rightSidebar.style.display = 'block'
       countdownDays.innerText = Math.ceil(Math.abs(new Date(scheduleConfig.countdown_target) - date) / (1000 * 60 * 60 * 24))
