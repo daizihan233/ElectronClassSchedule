@@ -70,11 +70,18 @@
     let classHtml = '';
     for (let i = 0; i < scheduleData.scheduleArray.length; i++) {
       let inner = scheduleData.scheduleArray[i]
-      if (scheduleData.scheduleArray[i].indexOf('@') != -1) {
+      if (scheduleData.scheduleArray[i].indexOf('@') !== -1) {
         inner = `<div><div style="display:inline">${inner.split('@')[0]}</div><div class="subClass">${inner.split('@')[1]}</div></div>`
       }
-      if (scheduleData.currentHighlight.index == i) {
-        if (scheduleData.currentHighlight.isEnd)
+      if (scheduleData.currentHighlight.index === i) {
+        if (scheduleData.currentHighlight.fullName === "家长会") {
+          let stri = "热烈欢迎家长们来我校开家长会"
+          classHtml = ''
+          for (const element of stri) {
+            classHtml += `<div class="class">${element}</div>`
+          }
+          break
+        } else if (scheduleData.currentHighlight.isEnd)
           classHtml += `<div class="class" id="highlighted" style="color:rgba(166,166,166);">${inner}</div>`
         else if (scheduleData.currentHighlight.type === 'current')
           classHtml += `<div class="class current" id="highlighted">${inner}</div>`
@@ -86,7 +93,7 @@
         else
           classHtml += `<div class="class">${inner}</div>`
       }
-      if (scheduleData.divider.indexOf(i) != -1)
+      if (scheduleData.divider.indexOf(i) !== -1)
         classHtml += '<div class="divider"></div>'
     }
     classContainer.innerHTML = classHtml
@@ -106,7 +113,7 @@
     countdownText.innerText = scheduleData.currentHighlight.countdownText;
     if (scheduleData.currentHighlight.type === 'current') {
       if (isClassCountdown) {
-        if (isClassHidden) { // 上课 并且开启了倒计时 并且 隐藏主体 -> 显示小窗口 
+        if (isClassHidden) { // 上课 并且开启了倒计时 并且 隐藏主体 -> 显示小窗口
           countdownContainer.style.display = 'none'
           miniCountdown.style.display = 'block'
           miniCountdown.innerHTML = `<div class="currentClass">${currentFullName.innerText = scheduleData.currentHighlight.fullName}</div><div class="countdown" style="margin-left:5px">${scheduleData.currentHighlight.countdownText}</div>`
@@ -126,15 +133,24 @@
   }
 
   function setCountdownerPosition() {
-    let highlightElement = document.getElementById('highlighted')
     let offset = {}
+    if (scheduleData.currentHighlight.fullName === "家长会") {
+      offset = {
+        x: classContainer.offsetWidth / 2 - countdownContainer.offsetWidth / 4 - Number(getComputedStyle(root).getPropertyValue('--center-font-size').replace('px', '')) - Number(getComputedStyle(root).getPropertyValue('--main-horizontal-space').replace('px', '')) * 2,
+        y: classContainer.offsetHeight
+      }
+      countdownContainer.style.left = offset.x + 'px'
+      countdownContainer.style.top = offset.y + 'px'
+      return
+    }
+    let highlightElement = document.getElementById('highlighted')
     if (scheduleData.currentHighlight.type === 'current') {
       offset = {
         x: highlightElement.offsetLeft - countdownContainer.offsetWidth / 2 + highlightElement.offsetWidth / 2,
         y: classContainer.offsetHeight
       }
     } else if (scheduleData.currentHighlight.type === 'upcoming') {
-      if (scheduleData.currentHighlight.index != 0 && scheduleData.divider.indexOf((scheduleData.currentHighlight.index - 1)) != -1) {
+      if (scheduleData.currentHighlight.index !== 0 && scheduleData.divider.indexOf((scheduleData.currentHighlight.index - 1)) !== -1) {
         offset = {
           x: highlightElement.offsetLeft - countdownContainer.offsetWidth / 2 - Number(getComputedStyle(highlightElement).marginLeft.replace('px', '')) - getComputedStyle(root).getPropertyValue('--divider-width').replace('px', '') / 2 - getComputedStyle(root).getPropertyValue('--divider-margin').replace('px', ''),
           y: classContainer.offsetHeight
