@@ -36,8 +36,9 @@ jobs:
         run: node_modules/.bin/electron-rebuild
 
       - name: Build application
-        run: npm run build
-
+        run: |
+          npm run build 
+          npm run builder
       - name: Delete release
         uses: cb80/delrel@latest
         with:
@@ -54,8 +55,9 @@ jobs:
           release_name: Latest Release 
           body: |
             - 点击下方 `ElectronClassSchedule.zip` 即可下载，下载完成后请先解压再运行
-            - 若下载过慢可使用第三方代理下载 [【点我下载】Win7_Win8_ElectronClassSchedule.zip](https://mirror.ghproxy.com/?q=https%3A%2F%2Fgithub.com%2Fdaizihan233%2FElectronClassSchedule%2Freleases%2Fdownload%2Flatest%2FWin7_Win8_ElectronClassSchedule.zip)
-            - 若下载过慢可使用第三方代理下载 [【点我下载】Win10_Win11_ElectronClassSchedule.zip](https://mirror.ghproxy.com/?q=https%3A%2F%2Fgithub.com%2Fdaizihan233%2FElectronClassSchedule%2Freleases%2Fdownload%2Flatest%2FWin10_Win11_ElectronClassSchedule.zip)
+            - 点击下方 `ElectronClassSchedule.exe` 即可下载，下载完成后请直接运行（建议，压缩包版本可能无法正常自动更新）
+            - 若下载过慢可使用第三方代理下载 [【点我下载】ElectronClassSchedule.zip](https://mirror.ghproxy.com/?q=https%3A%2F%2Fgithub.com%2Fdaizihan233%2FElectronClassSchedule%2Freleases%2Fdownload%2Flatest%2FElectronClassSchedule.zip)
+            - 若下载过慢可使用第三方代理下载 [【点我下载】ElectronClassSchedule.exe](https://mirror.ghproxy.com/?q=https%3A%2F%2Fgithub.com%2Fdaizihan233%2FElectronClassSchedule%2Freleases%2Fdownload%2Flatest%2FElectronClassSchedule.exe)
             - 推荐使用VSCode编辑配置文件 [【点我下载】Visual Studio Code](https://lsw-fast.lenovo.com.cn/appstore/apps/4970-2024-03-01100059-1709258459745.exe)
             - 欢迎进入官方群交流讨论 [【点我加群】电子课程表QQ交流群: 951996041](https://qm.qq.com/cgi-bin/qm/qr?k=uMV5WvO9aeZbg2YcSlVaxLLpjVHV_zHr&jump_from=webapi&authKey=LlCtWhk3XO5EOH5pTzJxfTUH1NxQAYevzi70zXAFESivsQQbzQKSQkbDTud2JOie)
             - 请备份好配置文件后整体替换包体
@@ -78,31 +80,15 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./out/classSchedule-win32-x64/release.zip
-          asset_name: Win10_Win11_ElectronClassSchedule.zip
+          asset_name: ElectronClassSchedule.zip
           asset_content_type: application/zip
-
-      - name: Install specific Electron version
-        run: npm install electron@22.3.27
-
-      - name: Rebuild dependencies for specific Electron version
-        run: node_modules/.bin/electron-rebuild
-
-      - name: Build application with specific Electron version
-        run: npm run build
-
-      - name: Pack folder to zip for specific Electron version
-        uses: thedoctor0/zip-release@0.7.5
-        with:
-          type: 'zip'
-          filename: 'release-electron-22.3.27.zip'
-          directory: './out/classSchedule-win32-x64'
-
-      - name: Upload release asset for specific Electron version
+      - name: Upload release asset for EXE
+        id: upload-release-asset-for-exe
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./out/classSchedule-win32-x64/release-electron-22.3.27.zip
-          asset_name: Win7_Win8_ElectronClassSchedule.zip
-          asset_content_type: application/zip
+          asset_path: ./dist/ElectronClassSchedule 1.0.0.exe
+          asset_name: ElectronClassSchedule.exe
+          asset_content_type: application/exe
