@@ -7,19 +7,29 @@
   "license": "GPLv3",
   "scripts": {
     "debug": "chcp 65001 && electron . --enable-logging",
-    "start": "chcp 65001 && electron .",
+    "start": "electron-forge start",
     "rebuild": "electron-rebuild",
-    "build": "electron-packager . classSchedule --platform=win32 --arch=x64 --out=./out --app-version=0.0.1 --overwrite"
+    "build": "electron-packager . classSchedule --platform=win32 --arch=x64 --out=./out --app-version=0.0.1 --overwrite",
+    "package": "electron-forge package",
+    "make": "electron-forge make"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.4.0",
+    "@electron-forge/maker-deb": "^7.4.0",
+    "@electron-forge/maker-rpm": "^7.4.0",
+    "@electron-forge/maker-squirrel": "^7.4.0",
+    "@electron-forge/maker-zip": "^7.4.0",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.4.0",
+    "@electron-forge/plugin-fuses": "^7.4.0",
+    "@electron/fuses": "^1.8.0",
     "@electron/rebuild": "^3.6.0",
+    "electron": "^22.3.27",
     "electron-packager": "^17.1.2"
   },
   "dependencies": {
-    "electron": "^22.3.27",
     "electron-disable-minimize": "^2.1.0",
     "electron-prompt": "^1.7.0",
+    "electron-squirrel-startup": "^1.0.1",
     "electron-store": "^8.1.0",
     "node-gyp": "^10.0.1",
     "windows-shortcuts": "^0.1.6"
