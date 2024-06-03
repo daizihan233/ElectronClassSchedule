@@ -16,8 +16,9 @@
   "devDependencies": {
     "@electron-forge/cli": "^7.4.0",
     "@electron/rebuild": "^3.6.0",
+    "electron": "^22.3.27",
     "electron-packager": "^17.1.2",
-    "electron": "^22.3.27"
+    "electron-builder": "^24.13.3"
   },
   "dependencies": {
     "electron-disable-minimize": "^2.1.0",
@@ -29,8 +30,8 @@
   },
   "build": {
     "appId": "cn.khbit.ecs",
-    "copyright":"KuoHu",
-    "productName":"ElectronClassSchedule",
+    "copyright": "KuoHu",
+    "productName": "ElectronClassSchedule",
     "win": {
       "target": [
         "portable"
