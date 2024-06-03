@@ -9,19 +9,32 @@
     "debug": "chcp 65001 && electron . --enable-logging",
     "start": "chcp 65001 && electron .",
     "rebuild": "electron-rebuild",
-    "build": "electron-packager . classSchedule --platform=win32 --arch=x64 --out=./out --app-version=0.0.1 --overwrite"
+    "build": "electron-packager . classSchedule --platform=win32 --arch=x64 --out=./out --app-version=0.0.1 --overwrite",
+    "builder": "electron-builder",
+    "postinstall": "electron-builder install-app-deps"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.4.0",
     "@electron/rebuild": "^3.6.0",
-    "electron-packager": "^17.1.2"
+    "electron-packager": "^17.1.2",
+    "electron": "^22.3.27"
   },
   "dependencies": {
-    "electron": "^22.3.27",
     "electron-disable-minimize": "^2.1.0",
     "electron-prompt": "^1.7.0",
     "electron-store": "^8.1.0",
+    "node-cmd": "^5.0.0",
     "node-gyp": "^10.0.1",
     "windows-shortcuts": "^0.1.6"
+  },
+  "build": {
+    "appId": "cn.khbit.ecs",
+    "copyright":"KuoHu",
+    "productName":"ElectronClassSchedule",
+    "win": {
+      "target": [
+        "portable"
+      ]
+    }
   }
 }
