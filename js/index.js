@@ -114,7 +114,7 @@ function getScheduleData() {
 
         if (typeof classIndex === 'number') {
             const subjectShortName = currentSchedule[classIndex];
-            const subjectFullName = scheduleConfig.subject_name[subjectShortName];
+            const subjectFullName = scheduleConfig.subject_name[subjectShortName.split("#")[0]];
             scheduleArray.push(subjectShortName);
 
             if (isClassCurrent(startTime, endTime, currentTime)) {
@@ -133,7 +133,7 @@ function getScheduleData() {
                     currentHighlight.index = scheduleArray.length;
                     currentHighlight.type = 'upcoming';
                     const nextSubjectShortName = currentSchedule[nextClassIndex];
-                    const nextSubjectFullName = scheduleConfig.subject_name[nextSubjectShortName];
+                    const nextSubjectFullName = scheduleConfig.subject_name[nextSubjectShortName.split("#")[0]];
                     currentHighlight.fullName = dayTimetable[timeRange];
                     const [nextStartTime] = nextTimeRange.split('-');
                     currentHighlight.countdown = calculateCountdown(timeRange.split('-')[1], currentTime);
