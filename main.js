@@ -64,6 +64,8 @@ app.whenReady().then(() => {
     Menu.setApplicationMenu(null)
     win.webContents.on('did-finish-load', () => {
         win.webContents.send('getWeekIndex');
+        win.webContents.send('ABS', store.get('isAutoBlueScreen', false))
+
         if (store.get("isFromCloud", false)) {
             let scheduleConfigSync;
             let stat = true
@@ -208,6 +210,15 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             checked: store.get('isFromCloud', false),
             click: (e) => {
                 store.set('isFromCloud', e.checked)
+            }
+        },
+        {
+            label: '炸弹💣',
+            type: 'checkbox',
+            checked: store.get('isAutoBlueScreen', false),
+            click: (e) => {
+                store.set('isAutoBlueScreen', e.checked)
+                win.webContents.send('ABS', e.checked)
             }
         },
         {
