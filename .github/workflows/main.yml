@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build-win10:
+  build:
     runs-on: windows-latest
 
     steps:
