@@ -74,7 +74,7 @@
       let inner = scheduleData.scheduleArray[i]
       if (scheduleData.scheduleArray[i].indexOf('#') !== -1) {
         inner = scheduleData.scheduleArray[i].split("#")[0]
-        if (scheduleData.currentHighlight.index === i) {
+        if (scheduleData.currentHighlight.index === i && isAutoBlueScreen) {
           BlueScreenNow = true
         }
       }
