@@ -351,6 +351,8 @@
 
   ipcRenderer.on('ABS', (e, arg) => {
     isAutoBlueScreen = arg
+    if (arg === false) BlueScreenNow = false
+    else setScheduleClass()
     console.log(isAutoBlueScreen)
   })
 
