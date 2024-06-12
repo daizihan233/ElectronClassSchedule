@@ -308,7 +308,7 @@ ipcMain.on('fromCloud', (e, arg) => {
 
 ipcMain.on('getWeather', () => {
     const { net } = require('electron')
-    const request = net.request("https://class.khbit.cn/api/weather/Nanjing")
+    const request = net.request("https://class.khbit.cn/api/weather/Jiangsu/Nanjing")
     let weatherData;
     request.on('response', (response) => {
         response.on('data', (chunk) => {
