@@ -229,11 +229,8 @@
   let timer = undefined
   window.addEventListener("mousemove", event => {
     if (event.target.className && event.target.className.indexOf('notIgnoreClick') == -1) {
-      root.style.opacity = '0.2'
+      root.style.opacity = '0.1'
       clearTimeout(timer)
-      timer = setTimeout(() => {
-        root.style.opacity = '1'
-      }, 5000);
     } else {
       clearTimeout(timer)
       root.style.opacity = '1'
