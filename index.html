@@ -195,6 +195,7 @@
       countdownDays.innerText = Math.ceil(Math.abs(new Date(scheduleConfig.countdown_target) - date) / (1000 * 60 * 60 * 24))
     }
     leftSidebar.style.display = scheduleConfig.week_display ? 'block' : 'none'
+    ipcRenderer.send('getWeather', false)
   }
 
   function tick(reset = false) {
@@ -368,6 +369,11 @@
     localStorage.setItem('setDayOffsetLastDay', '-1')
     dayOffset = -1
     setDayOffsetLastDay = -1
+  })
+
+  ipcRenderer.on('setWeather', (e, arg) => {
+    temperature.innerText = arg["temp"] + "℃"
+    weather.innerText = arg["weat"]
   })
 </script>
 
