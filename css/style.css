@@ -105,10 +105,18 @@
     transform: translateX(calc(100% + var(--container-space)));
 }
 
+.weatherSidebar {
+    right: 0;
+    left: 0;
+    color: #FF3a3a;
+    transform: translateX(calc(100% + var(--container-space)));
+}
+
 .leftSidebar {
     left: 0;
     color: rgb(0, 238, 255);
     transform: translateX(calc(-100% - var(--container-space)));
+    text-align: right;
 }
 
 .corner {

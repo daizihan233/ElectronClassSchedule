@@ -26,8 +26,13 @@
         <div class="countdown" id="countdownText">00:00</div>
       </div>
     </div>
-    <div class="leftSidebar sidebar background" id="leftSidebar"><span id="weekEN" class="t">Load</span><div class="corner options notIgnoreClick" id="weekCH">ing</div></div>
-    <div class="rightSidebar sidebar background" id="rightSidebar"><span id="countdownDays" class="t">000</span><div class="corner" id="corunit">天</div></div>
+    <div class="leftSidebar sidebar background" id="leftSidebar">
+      <span id="temperature" class="t">000℃</span><div class="corner" id="weather">？</div>
+      <span id="weekEN" class="t">Load</span><div class="corner options notIgnoreClick" id="weekCH">ing</div>
+    </div>
+    <div class="rightSidebar sidebar background" id="rightSidebar">
+      <span id="countdownDays" class="t">000</span><div class="corner" id="corunit">天</div>
+    </div>
   </div>
   <div class="miniCountdown" id="miniCountdown">00:00</div>
 
@@ -48,6 +53,9 @@
   let miniCountdown = document.getElementById('miniCountdown')
   let rightSidebar = document.getElementById('rightSidebar')
   let leftSidebar = document.getElementById('leftSidebar')
+  let weatherSidebar = document.getElementById('weatherSidebar')
+  let temperature = document.getElementById('temperature')
+  let weather = document.getElementById('weather')
   let root = document.querySelector(':root');
   let isClassCountdown = true
   let isClassHidden = true
