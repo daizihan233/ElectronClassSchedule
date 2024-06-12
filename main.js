@@ -305,3 +305,19 @@ ipcMain.on('fromCloud', (e, arg) => {
     })
 })
 
+
+ipcMain.on('getWeather', () => {
+    const { net } = require('electron')
+    const request = net.request("https://class.khbit.cn/api/weather/Nanjing")
+    let weatherData;
+    request.on('response', (response) => {
+        response.on('data', (chunk) => {
+            weatherData = JSON.parse(chunk.toString())
+        })
+        response.on('end', () => {
+            win.webContents.send('setWeather', weatherData)
+        })
+    })
+    request.end()
+})
+
