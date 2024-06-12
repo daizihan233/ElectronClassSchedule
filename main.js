@@ -94,37 +94,6 @@ ipcMain.on('getWeekIndex', (e, arg) => {
     tray = new Tray(basePath + 'image/icon.png')
     template = [
         {
-            label: '第一周',
-            type: 'radio',
-            click: () => {
-                win.webContents.send('setWeekIndex', 0)
-            }
-        },
-        {
-            label: '第二周',
-            type: 'radio',
-            click: () => {
-                win.webContents.send('setWeekIndex', 1)
-            }
-        },
-        {
-            label: '第三周',
-            type: 'radio',
-            click: () => {
-                win.webContents.send('setWeekIndex', 2)
-            }
-        },
-        {
-            label: '第四周',
-            type: 'radio',
-            click: () => {
-                win.webContents.send('setWeekIndex', 3)
-            }
-        },
-        {
-            type: 'separator'
-        },
-        {
             icon: basePath + 'image/setting.png',
             label: '配置课表',
             click: () => {
