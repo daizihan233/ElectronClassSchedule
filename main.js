@@ -279,14 +279,18 @@ ipcMain.on('getWeather', () => {
     const { net } = require('electron')
     const request = net.request("https://class.khbit.cn/api/weather/Jiangsu/Nanjing")
     let weatherData;
-    request.on('response', (response) => {
-        response.on('data', (chunk) => {
-            weatherData = JSON.parse(chunk.toString())
+    try {
+        request.on('response', (response) => {
+            response.on('data', (chunk) => {
+                weatherData = JSON.parse(chunk.toString())
+            })
+            response.on('end', () => {
+                win.webContents.send('setWeather', weatherData)
+            })
         })
-        response.on('end', () => {
-            win.webContents.send('setWeather', weatherData)
-        })
-    })
+    } catch (e) {
+        console.log(e)
+    }
     request.end()
 })
 
