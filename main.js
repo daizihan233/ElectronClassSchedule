@@ -122,6 +122,39 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             }
         },
         {
+            icon: basePath + 'image/toggle.png',
+            label: '刷新天气',
+            click: () => {
+                win.webContents.send('updateWeather')
+            }
+        },
+        {
+            icon: basePath + 'image/toggle.png',
+            label: '当前地区',
+            click: () => {
+                    prompt({
+                        title: '地理位置',
+                        label: '请设置当前所在地区:',
+                        value: store.get('local', "Nanjing/Gulou"),
+                        inputAttrs: {
+                            type: 'string'
+                        },
+                        type: 'input',
+                        height: 180,
+                        width: 400,
+                        icon: basePath + 'image/toggle.png',
+                    }).then((r) => {
+                        if (r === null) {
+                            console.log('[Local] User cancelled');
+                        } else {
+                            store.set("local", r.toString())
+                            console.log('[Local] ', r.toString());
+                        }
+                    })
+
+            }
+        },
+        {
             icon: basePath + 'image/github.png',
             label: '源码仓库',
             click: () => {
@@ -277,7 +310,10 @@ ipcMain.on('fromCloud', (e, arg) => {
 
 ipcMain.on('getWeather', () => {
     const { net } = require('electron')
-    const request = net.request("https://class.khbit.cn/api/weather/Jiangsu/Nanjing")
+    const local = store.get('local', "Nanjing/Gulou")
+    const request = net.request(
+        "https://class.khbit.cn/api/weather/" + local
+    )
     let weatherData;
     try {
         request.on('response', (response) => {

@@ -372,6 +372,25 @@
     temperature.innerText = arg["temp"] + "℃"
     weather.innerText = arg["weat"]
   })
+
+  ipcRenderer.on('getDayOffset', (e, arg) => {
+    if (arg.index === -1) return
+    if (arg.index <= 6) {
+      localStorage.setItem('dayOffset', arg.index.toString())
+      localStorage.setItem('setDayOffsetLastDay', new Date().getDay().toString())
+      dayOffset = arg.index
+      setDayOffsetLastDay = new Date().getDay()
+      return
+    }
+    localStorage.setItem('dayOffset', '-1')
+    localStorage.setItem('setDayOffsetLastDay', '-1')
+    dayOffset = -1
+    setDayOffsetLastDay = -1
+  })
+
+  ipcRenderer.on('updateWeather', (e, arg) => {
+    ipcRenderer.send('getWeather', false)
+  })
 </script>
 
 </html>
