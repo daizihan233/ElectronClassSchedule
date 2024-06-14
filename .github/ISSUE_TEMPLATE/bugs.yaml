@@ -39,23 +39,13 @@ body:
         为了确保你是人类，请阅读并勾选以下内容，如有错选本仓库所有者可能会直接关闭此 Issue。
       options:
         - label: "我保证我已经认真阅读了以上说明，并已经勾选上面的选项"  # y
-          required: false
         - label: "我不确定我有认真阅读了以上说明，并没有勾选了上面的选项"  # x
-          required: false
         - label: "我确定我没有已经认真阅读了以上说明，并已经勾选上面的选项"  # x
-          required: false
         - label: "我不否认我确认了我已经认真阅读了以上说明，并否认我确定没有勾选上面的选项"  # y
-          required: false
         - label: "我确定我没有认真阅读了以上说明，并没有勾选上面的选项"  # x
-          required: false
         - label: "我不确定我没有认真阅读了以上说明，并勾选了上面的选项"  # y
-          required: false
-        - label: "我不确定我有认真阅读了以上说明，并没有勾选了上面的选项"  # x
-          required: false
         - label: "我承诺我以上所勾选的信息是不属实的"  # x
-          required: false
         - label: "我承诺我以上所勾选的信息不是错误的"  # y
-          required: false
 
   - type: markdown
     attributes:
