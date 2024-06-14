@@ -64,6 +64,15 @@ body:
     id: description
     attributes:
       label: 新功能描述
+      description: 简述这个功能是干嘛的
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 新功能意义
+      description: 简述这个功能的意义在哪
     validations:
       required: true
 
