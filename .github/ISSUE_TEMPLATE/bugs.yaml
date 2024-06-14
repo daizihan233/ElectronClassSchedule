@@ -1,0 +1,139 @@
+name: 有虫子在课表身上爬（悲）
+description: 点击此项使用杀虫剂
+title: '[Bug?]: '
+labels: [ "Bug?" ]
+assignees: [ "daizihan233" ]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 感谢您愿意花一些时间来填写这个内容！
+        ## 以下是一些注意事项，请务必阅读让我能够更容易处理
+
+        ### ❗ | 确定没有相同问题的ISSUE已被提出。
+        ### ❔ | 尽量使用截图而非拍屏，如果有必要请使用录屏
+        ### ⚠ | 如果涉及敏感信息，请自行打码
+
+        ## 如果您不知道如何有效、精准地表述，我建议您先阅读《提问的智慧》
+        链接: [《提问的智慧》](https://github.com/ryanhanwu/How-To-Ask-Questions-The-Smart-Way/blob/main/README-zh_CN.md)
+        ---
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: |
+        请确保您已阅读以上注意事项，并勾选下方的确认框。
+      options:
+        - label: "我已经仔细阅读上述教程和 [\"《提问的智慧》\"](https://github.com/ryanhanwu/How-To-Ask-Questions-The-Smart-Way/blob/main/README-zh_CN.md)。"
+          required: true
+        - label: "我确定这不是因为操作失误而引起的问题。"
+          required: true
+        - label: "我确定这是一个有意义的Issue，且目前没有解决方案。"
+          required: true
+        - label: "我确定在最近的 commit 提交所对应的版本中仍未修复"
+          required: true
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: |
+        为了确保你是人类，请阅读并勾选以下内容，如有错选本仓库所有者可能会直接关闭此 Issue。
+      options:
+        - label: "我保证我已经认真阅读了以上说明，并已经勾选上面的选项"  # y
+        - label: "我不确定我有认真阅读了以上说明，并没有勾选了上面的选项"  # x
+        - label: "我确定我没有已经认真阅读了以上说明，并已经勾选上面的选项"  # x
+        - label: "我不否认我确认了我已经认真阅读了以上说明，并否认我确定没有勾选上面的选项"  # y
+        - label: "我确定我没有认真阅读了以上说明，并没有勾选上面的选项"  # x
+        - label: "我不确定我没有认真阅读了以上说明，并勾选了上面的选项"  # y
+        - label: "我不确定我有认真阅读了以上说明，并没有勾选了上面的选项"  # x
+        - label: "我承诺我以上所勾选的信息是不属实的"  # x
+        - label: "我承诺我以上所勾选的信息不是错误的"  # y
+
+  - type: markdown
+    attributes:
+      value: |
+        ## 相关信息
+        请根据实际使用环境修改以下信息。
+
+  - type: dropdown
+    id: config-type
+    attributes:
+      label: 您使用的配置文件类别是？
+      description: 选择配置文件的获取方式
+      options:
+        - 云端链接
+        - 本地文件
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce-steps
+    attributes:
+      label: 配置文件
+      description: |
+        提供测试时使用的配置文件
+        如果使用云端链接，请同时提供云端链接
+    validations:
+      required: true
+
+  - type: dropdown
+    id: problem-type
+    attributes:
+      label: 您反馈的问题属于以下哪个功能？
+      description: 如果您确实不知道属于什么，可以选择：“我不确定”
+      options:
+        - 课表显示
+        - 云端同步
+        - 当前日期
+        - 倒数日期
+        - 实时天气
+        - 其他错误
+        - 我不确定
+    validations:
+      required: true
+
+  - type: dropdown
+    id: question-type
+    attributes:
+      label: 您反馈的问题属于以下哪个类别？
+      description: 如果您确实不知道属于什么，可以选择：“我不确定”
+      options:
+        - 功能异常
+        - 弹窗报错
+        - 无法生效
+        - 我不确定
+    validations:
+      required: true
+
+  # Input | Reproduce
+  - type: textarea
+    id: reproduce-steps
+    attributes:
+      label: 重现步骤
+      description: |
+        我需要执行哪些操作才能让 bug 出现？
+        简洁清晰的重现步骤能够帮助我更迅速地定位问题所在。
+    validations:
+      required: true
+
+  # Input | Expected result
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望的结果是什么？
+    validations:
+      required: true
+
+  # Input | Actual result
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际的结果是什么？
+    validations:
+      required: true
+
+
+  # Optional | Extra description
+  - type: textarea
+    id: extra-desc
+    attributes:
+      label: 补充说明（可选）
