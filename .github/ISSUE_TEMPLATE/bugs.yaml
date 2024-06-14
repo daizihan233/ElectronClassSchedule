@@ -33,7 +33,7 @@ body:
         - label: "我确定在最近的 commit 提交所对应的版本中仍未修复"
           required: true
   - type: checkboxes
-    id: terms
+    id: captcha
     attributes:
       label: |
         为了确保你是人类，请阅读并勾选以下内容，如有错选本仓库所有者可能会直接关闭此 Issue。
