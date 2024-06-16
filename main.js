@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain, dialog, screen, Tray, shell, net} = require('electron')
+const { app, BrowserWindow, Menu, ipcMain, dialog, screen, Tray, shell} = require('electron')
 const path = require('path');
 const fs = require('fs')
 const os = require('os')
@@ -8,9 +8,9 @@ const prompt = require('electron-prompt');
 const Store = require('electron-store');
 const { DisableMinimize } = require('electron-disable-minimize');
 const store = new Store();
-let tray = undefined;
-let form = undefined;
-var win = undefined;
+let tray;
+let form;
+let win;
 let template = []
 let basePath = app.isPackaged ? './resources/app/' : './'
 if (!app.requestSingleInstanceLock({ key: 'classSchedule' })) {
@@ -18,6 +18,7 @@ if (!app.requestSingleInstanceLock({ key: 'classSchedule' })) {
 }
 app.commandLine.appendSwitch("--disable-http-cache");
 const createWindow = () => {
+    // noinspection JSCheckFunctionSignatures
     win = new BrowserWindow({
         x: 0,
         y: 0,
@@ -38,6 +39,7 @@ const createWindow = () => {
         },
     })
     // win.webContents.openDevTools()
+    // noinspection JSIgnoredPromiseFromCall
     win.loadFile('index.html')
     if (store.get('isWindowAlwaysOnTop', true))
         win.setAlwaysOnTop(true, 'screen-saver', 9999999999999)
@@ -66,10 +68,10 @@ app.whenReady().then(() => {
         win.webContents.send('getWeekIndex');
         if (store.get("isFromCloud", false)) {
             let scheduleConfigSync;
-            let stat = true
             setTimeout(function () {
                 const { net } = require('electron')
                 const url = store.get('url', "https://class.khbit.cn/")
+                // noinspection JSCheckFunctionSignatures
                 const request = net.request(url)
                 request.on('response', (response) => {
                     response.on('data', (chunk) => {
@@ -158,7 +160,8 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             icon: basePath + 'image/github.png',
             label: '源码仓库',
             click: () => {
-                shell.openExternal('https://github.com/EnderWolf006/ElectronClassSchedule');
+                // noinspection JSIgnoredPromiseFromCall
+                shell.openExternal('https://github.com/daizihan233/ElectronClassSchedule');
             }
         },
         {
@@ -259,7 +262,7 @@ ipcMain.on('dialog', (e, arg) => {
     })
 })
 
-ipcMain.on('pop', (e, arg) => {
+ipcMain.on('pop', () => {
     tray.popUpContextMenu(form)
 })
 
@@ -310,9 +313,8 @@ ipcMain.on('fromCloud', (e, arg) => {
 
 ipcMain.on('getWeather', () => {
     const { net } = require('electron')
-    const local = store.get('local', "Nanjing/Gulou")
     const request = net.request(
-        "https://class.khbit.cn/api/weather/" + local
+        "https://class.khbit.cn/api/weather/" + store.get('local', "Nanjing/Gulou")
     )
     let weatherData;
     try {
