@@ -66,30 +66,31 @@ function setAutoLaunch() {
     }
 
 }
+function getScheduleFromCloud() {
+    const { net } = require('electron')
+    const url = `${agreement}://${server}/${classId}`
+    // noinspection JSCheckFunctionSignatures
+    const request = net.request(url)
+    let scheduleConfigSync;
+    request.on('response', (response) => {
+        response.on('data', (chunk) => {
+            scheduleConfigSync = JSON.parse(chunk.toString())
+            console.log(scheduleConfigSync)
+        })
+        response.on('end', () => {
+            console.log('No more data in response.')
+            win.webContents.send("newConfig", scheduleConfigSync)
+        })
+    })
+    request.end()
+}
 app.whenReady().then(() => {
     createWindow()
     Menu.setApplicationMenu(null)
     win.webContents.on('did-finish-load', () => {
         win.webContents.send('getWeekIndex');
         if (store.get("isFromCloud", false)) {
-            let scheduleConfigSync;
-            setTimeout(function () {
-                const { net } = require('electron')
-                const url = `${agreement}://${server}/${classId}`
-                // noinspection JSCheckFunctionSignatures
-                const request = net.request(url)
-                request.on('response', (response) => {
-                    response.on('data', (chunk) => {
-                        scheduleConfigSync = JSON.parse(chunk.toString())
-                        console.log(scheduleConfigSync)
-                    })
-                    response.on('end', () => {
-                        console.log('No more data in response.')
-                        win.webContents.send("newConfig", scheduleConfigSync)
-                    })
-                })
-                request.end()
-            }, 5000)
+            setTimeout(getScheduleFromCloud, 5000)
         }
     })
     const handle = win.getNativeWindowHandle();
@@ -100,6 +101,14 @@ app.whenReady().then(() => {
 ipcMain.on('getWeekIndex', (e, arg) => {
     tray = new Tray(basePath + 'image/icon.png')
     template = [
+        {
+            label: '连接云端',
+            type: 'checkbox',
+            checked: store.get('isFromCloud', false),
+            click: (e) => {
+                store.set('isFromCloud', e.checked)
+            }
+        },
         {
             icon: basePath + 'image/toggle.png',
             label: '云端服务',
@@ -229,14 +238,6 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             click: (e) => {
                 store.set('isAutoLaunch', e.checked)
                 setAutoLaunch()
-            }
-        },
-        {
-            label: '云端获取',
-            type: 'checkbox',
-            checked: store.get('isFromCloud', false),
-            click: (e) => {
-                store.set('isFromCloud', e.checked)
             }
         },
         {
