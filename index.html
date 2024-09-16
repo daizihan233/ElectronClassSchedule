@@ -325,13 +325,28 @@
   })
 
   ipcRenderer.on('fromCloud', () => {
-    let uri = localStorage.getItem('url');
-    ipcRenderer.send('fromCloud', uri === null ? "https://class.khbit.cn/" : uri.toString())
+    let uri = localStorage.getItem('server');
+    ipcRenderer.send('fromCloud', uri === null ? "class.khbit.cn" : uri.toString())
+  })
+
+  ipcRenderer.on('setClass', () => {
+    let uri = localStorage.getItem('class');
+    ipcRenderer.send('setClass', uri === null ? "39/2023/1" : uri.toString())
   })
 
   ipcRenderer.on('setCloudUrl', (e, arg) => {
     url = arg
-    localStorage.setItem('url', arg.toString())
+    localStorage.setItem('server', arg.toString())
+  })
+
+  ipcRenderer.on('setCloudClass', (e, arg) => {
+    url = arg
+    localStorage.setItem('class', arg.toString())
+  })
+
+  ipcRenderer.on('setCloudSec', (e, arg) => {
+    url = arg
+    localStorage.setItem('server', arg.toString())
   })
 
   ipcRenderer.on('newConfig', (e, arg) => {
