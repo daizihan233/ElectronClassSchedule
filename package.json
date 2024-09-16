@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "classSchedule",
   "main": "main.js",
-  "author": "lsl",
+  "author": "KuoHu",
   "license": "GPLv3",
   "scripts": {
     "debug": "chcp 65001 && electron . --enable-logging",
@@ -33,6 +33,6 @@
     "electron-store": "^8.1.0",
     "node-gyp": "^10.0.1",
     "socket.io-client": "^4.7.5",
-    "windows-shortcuts": "^0.1.6",
+    "windows-shortcuts": "^0.1.6"
   }
 }
