@@ -14,10 +14,56 @@ let win;
 let template = []
 let basePath = app.isPackaged ? './resources/app/' : './'
 let agreement = "https";
-if (!store.get("isSecureConnection", true))
+let agreementWs = "wss";
+if (!store.get("isSecureConnection", true)) {
     agreement = "http";
+    agreementWs = "ws";
+}
 let server = store.get("server", "class.khbit.cn")
 let classId = store.get("class", "39/2023/1")
+const WebSocket = require('ws');
+let ws;
+function connect(rejectUnauthorized = true) {
+    let errorFlag = false;
+    ws = new WebSocket.WebSocket(
+        `${agreementWs}://${server}/ws/${classId}`,
+        [], {
+            rejectUnauthorized: rejectUnauthorized
+        }
+    );
+    ws.on('open', () => {
+        console.log('Connected to server');
+        setInterval(() => {
+            ws.ping(); // 发送心跳消息
+            console.log('Heartbeat sent');
+        }, 25000); // 每 25 秒发送一次心跳
+    });
+
+    // 处理接收到的消息
+    ws.on('message', (message) => {
+        console.log('Received from server:', message.toString());
+        if (message.toString() === "SyncConfig") {
+            console.log('SyncConfig');
+            getScheduleFromCloud();
+        }
+    });
+
+    // 处理连接关闭
+    ws.on('close', () => {
+        console.log('Disconnected from server');
+        if (!errorFlag || !rejectUnauthorized)
+            setTimeout(connect, 5000); // 重连
+    });
+
+    // 处理错误
+    ws.on('error', (error) => {
+        errorFlag = true;
+        console.error('WebSocket error:', error, ", try to connect without verifying the certificate");
+        if (rejectUnauthorized)
+            connect(false); // 尝试连接不验证证书
+    });
+}
+connect();
 if (!app.requestSingleInstanceLock({ key: 'classSchedule' })) {
     app.quit();
 }
@@ -143,26 +189,32 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             icon: basePath + 'image/toggle.png',
             label: '当前地区',
             click: () => {
-                    prompt({
-                        title: '地理位置',
-                        label: '请设置当前所在地区:',
-                        value: store.get('local', "Nanjing/Gulou"),
-                        inputAttrs: {
-                            type: 'string'
-                        },
-                        type: 'input',
-                        height: 180,
-                        width: 400,
-                        icon: basePath + 'image/toggle.png',
-                    }).then((r) => {
-                        if (r === null) {
-                            console.log('[Local] User cancelled');
-                        } else {
-                            store.set("local", r.toString())
-                            console.log('[Local] ', r.toString());
-                        }
-                    })
-
+                prompt({
+                    title: '地理位置',
+                    label: '请设置当前所在地区:',
+                    value: store.get('local', "Nanjing/Gulou"),
+                    inputAttrs: {
+                        type: 'string'
+                    },
+                    type: 'input',
+                    height: 180,
+                    width: 400,
+                    icon: basePath + 'image/toggle.png',
+                }).then((r) => {
+                    if (r === null) {
+                        console.log('[Local] User cancelled');
+                    } else {
+                        store.set("local", r.toString())
+                        console.log('[Local] ', r.toString());
+                    }
+                })
+            }
+        },
+        {
+            icon: basePath + 'image/toggle.png',
+            label: '下发级部',
+            click: () => {
+                win.webContents.send('broadcastSyncConfig')
             }
         },
         {
@@ -379,5 +431,69 @@ ipcMain.on('getWeather', () => {
         console.log(e)
     }
     request.end()
+})
+
+ipcMain.on('RequestSyncConfig', () => {
+    prompt({
+        title: '云端密码',
+        label: '请输入密码：',
+        value: "",
+        inputAttrs: {
+            type: 'password'
+        },
+        type: 'input',
+        height: 180,
+        width: 400,
+        icon: basePath + 'image/toggle.png',
+    }).then((r) => {
+        const { net } = require('electron')
+        const request = net.request(
+            {
+                method: 'POST',
+                url: `${agreement}://${server}/api/broadcast/${classId}`,
+                headers: {
+                    "Authorization": `Basic ${Buffer.from(
+                        `ElectronClassSchedule:${r.toString()}`
+                    ).toString('base64')}`,
+                }
+            }
+        )
+        try {
+            request.on('response', (response) => {
+                response.on('data', (chunk) => {
+                    console.log(chunk.toString())
+                })
+                response.on('end', () => {
+                    console.log(response.statusCode)
+                    const { dialog } = require('electron');
+                    if (response.statusCode === 200) {
+                        dialog.showMessageBox({
+                            type: 'info',
+                            title: '提示',
+                            message: '已下发成功',
+                            buttons: ['已阅'],
+                        }).then(r => {});
+                    } else if (response.statusCode === 401) {
+                        dialog.showMessageBox({
+                            type: 'error',
+                            title: '错误',
+                            message: '服务端返回错误代码 401，这可能由于密码错误',
+                            buttons: ['已阅'],
+                        }).then(r => {});
+                    } else {
+                        dialog.showMessageBox({
+                            type: 'error',
+                            title: '错误',
+                            message: `服务端返回错误代码 ${response.statusCode}，这可能是因为服务端错误或正在被攻击`,
+                            buttons: ['已阅'],
+                        }).then(r => {});
+                    }
+                })
+            })
+        } catch (e) {
+            console.log(e)
+        }
+        request.end()
+    })
 })
 
