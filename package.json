@@ -32,6 +32,7 @@
     "electron-squirrel-startup": "^1.0.1",
     "electron-store": "^8.1.0",
     "node-gyp": "^10.0.1",
-    "windows-shortcuts": "^0.1.6"
+    "windows-shortcuts": "^0.1.6",
+    "ws": "^8.18.0"
   }
 }
