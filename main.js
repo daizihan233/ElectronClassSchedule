@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain, dialog, screen, Tray, shell} = require('electron')
+const { app, BrowserWindow, Menu, ipcMain, dialog, screen, Tray, shell, net} = require('electron')
 const path = require('path');
 const fs = require('fs')
 const os = require('os')
@@ -13,6 +13,11 @@ let form;
 let win;
 let template = []
 let basePath = app.isPackaged ? './resources/app/' : './'
+let agreement = "https";
+if (!store.get("isSecureConnection", true))
+    agreement = "http";
+let server = store.get("server", "class.khbit.cn")
+let classId = store.get("class", "39/2023/1")
 if (!app.requestSingleInstanceLock({ key: 'classSchedule' })) {
     app.quit();
 }
@@ -70,7 +75,7 @@ app.whenReady().then(() => {
             let scheduleConfigSync;
             setTimeout(function () {
                 const { net } = require('electron')
-                const url = store.get('url', "https://class.khbit.cn/")
+                const url = `${agreement}://${server}/${classId}`
                 // noinspection JSCheckFunctionSignatures
                 const request = net.request(url)
                 request.on('response', (response) => {
@@ -96,31 +101,26 @@ ipcMain.on('getWeekIndex', (e, arg) => {
     tray = new Tray(basePath + 'image/icon.png')
     template = [
         {
-            icon: basePath + 'image/setting.png',
-            label: '配置课表',
-            click: () => {
-                win.webContents.send('openSettingDialog')
-            }
-        },
-        {
-            icon: basePath + 'image/clock.png',
-            label: '矫正计时',
-            click: () => {
-                win.webContents.send('getTimeOffset')
-            }
-        },
-        {
             icon: basePath + 'image/toggle.png',
-            label: '切换日程',
-            click: () => {
-                win.webContents.send('setDayOffset')
-            }
-        },
-        {
-            icon: basePath + 'image/toggle.png',
-            label: '云端链接',
+            label: '云端服务',
             click: () => {
                 win.webContents.send('fromCloud')
+            }
+        },
+        {
+            label: '安全连接',
+            type: 'checkbox',
+            checked: store.get('isSecureConnection', true),
+            click: (e) => {
+                store.set('isSecureConnection', e.checked)
+                win.webContents.send('setCloudSec', e.checked)
+            }
+        },
+        {
+            icon: basePath + 'image/toggle.png',
+            label: '所在班级',
+            click: () => {
+                win.webContents.send('setClass')
             }
         },
         {
@@ -154,6 +154,30 @@ ipcMain.on('getWeekIndex', (e, arg) => {
                         }
                     })
 
+            }
+        },
+        {
+            type: 'separator'
+        },
+        {
+            icon: basePath + 'image/setting.png',
+            label: '配置课表',
+            click: () => {
+                win.webContents.send('openSettingDialog')
+            }
+        },
+        {
+            icon: basePath + 'image/clock.png',
+            label: '矫正计时',
+            click: () => {
+                win.webContents.send('getTimeOffset')
+            }
+        },
+        {
+            icon: basePath + 'image/toggle.png',
+            label: '切换日程',
+            click: () => {
+                win.webContents.send('setDayOffset')
             }
         },
         {
@@ -234,7 +258,7 @@ ipcMain.on('getWeekIndex', (e, arg) => {
     ]
     template[arg].checked = true
     form = Menu.buildFromTemplate(template)
-    tray.setToolTip('电子课表 - by lsl')
+    tray.setToolTip('电子课表 - by KuoHu')
     function trayClicked() {
         tray.popUpContextMenu(form)
     }
@@ -289,8 +313,8 @@ ipcMain.on('getTimeOffset', (e, arg) => {
 
 ipcMain.on('fromCloud', (e, arg) => {
     prompt({
-        title: '云端链接',
-        label: '请设置云端链接:',
+        title: '云端服务',
+        label: '请设置云端服务：',
         value: arg.toString(),
         inputAttrs: {
             type: 'string'
@@ -304,7 +328,31 @@ ipcMain.on('fromCloud', (e, arg) => {
             console.log('[Cloud] User cancelled');
         } else {
             win.webContents.send('setCloudUrl', r.toString())
-            store.set("url", r.toString())
+            store.set("server", r.toString())
+            console.log('[Cloud] ', r.toString());
+        }
+    })
+})
+
+
+ipcMain.on('setClass', (e, arg) => {
+    prompt({
+        title: '所在班级',
+        label: '请设置所在班级：',
+        value: arg.toString(),
+        inputAttrs: {
+            type: 'string'
+        },
+        type: 'input',
+        height: 180,
+        width: 400,
+        icon: basePath + 'image/toggle.png',
+    }).then((r) => {
+        if (r === null) {
+            console.log('[Cloud] User cancelled');
+        } else {
+            win.webContents.send('setCloudClass', r.toString())
+            store.set("class", r.toString())
             console.log('[Cloud] ', r.toString());
         }
     })
@@ -314,7 +362,7 @@ ipcMain.on('fromCloud', (e, arg) => {
 ipcMain.on('getWeather', () => {
     const { net } = require('electron')
     const request = net.request(
-        "https://class.khbit.cn/api/weather/" + store.get('local', "Nanjing/Gulou")
+        `${agreement}://${server}/api/weather/${store.get('local', "Nanjing/Gulou")}`
     )
     let weatherData;
     try {
