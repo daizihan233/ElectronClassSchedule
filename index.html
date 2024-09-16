@@ -416,6 +416,10 @@
   ipcRenderer.on('updateWeather', () => {
     ipcRenderer.send('getWeather', false)
   })
+
+  ipcRenderer.on('broadcastSyncConfig', () => {
+    ipcRenderer.send('RequestSyncConfig', false)
+  })
 </script>
 
 </html>
