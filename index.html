@@ -42,6 +42,7 @@
   let scheduleData = getScheduleData();
   let classContainer = document.getElementById('classContainer')
   let countdownContainer = document.getElementById('countdownContainer')
+  let cacheCountdownContainerOffsetWidth = countdownContainer.offsetWidth
   let corunit = document.getElementById('corunit')
   let currentFullName = document.getElementById('currentFullName')
   let countdownText = document.getElementById('countdownText')
@@ -137,44 +138,57 @@
   }
 
   function setCountdownerPosition() {
-    let offset = {}
+    let offset = {};
+    const centerFontSize = Number(getComputedStyle(root).getPropertyValue('--center-font-size').replace('px', ''));
+    const mainHorizontalSpace = Number(getComputedStyle(root).getPropertyValue('--main-horizontal-space').replace('px', ''));
+    const dividerWidth = Number(getComputedStyle(root).getPropertyValue('--divider-width').replace('px', ''));
+    const dividerMargin = Number(getComputedStyle(root).getPropertyValue('--divider-margin').replace('px', ''));
+    if (countdownContainer.style.display !== 'none')
+      cacheCountdownContainerOffsetWidth = countdownContainer.offsetWidth
     if (scheduleData.currentHighlight.fullName === "家长会") {
       offset = {
-        x: classContainer.offsetWidth / 2 - countdownContainer.offsetWidth / 4 - Number(getComputedStyle(root).getPropertyValue('--center-font-size').replace('px', '')) - Number(getComputedStyle(root).getPropertyValue('--main-horizontal-space').replace('px', '')) * 2,
+        x: classContainer.offsetWidth / 2 - cacheCountdownContainerOffsetWidth / 4 - centerFontSize - mainHorizontalSpace * 2,
         y: classContainer.offsetHeight
-      }
-      countdownContainer.style.left = offset.x + 'px'
-      countdownContainer.style.top = offset.y + 'px'
-      return
+      };
+      countdownContainer.style.left = offset.x + 'px';
+      countdownContainer.style.top = offset.y + 'px';
+      return;
     }
-    let highlightElement = document.getElementById('highlighted')
+
+    let highlightElement = document.getElementById('highlighted');
+    if (!highlightElement) return;
+
+    const marginLeft = Number(getComputedStyle(highlightElement).marginLeft.replace('px', ''));
     if (scheduleData.currentHighlight.type === 'current') {
       offset = {
-        x: highlightElement.offsetLeft - countdownContainer.offsetWidth / 2 + highlightElement.offsetWidth / 2,
+        x: highlightElement.offsetLeft - cacheCountdownContainerOffsetWidth / 2 + highlightElement.offsetWidth / 2,
         y: classContainer.offsetHeight
-      }
-    } else if (scheduleData.currentHighlight.type === 'upcoming') {
+      };
+      } else if (scheduleData.currentHighlight.type === 'upcoming') {
       if (scheduleData.currentHighlight.index !== 0 && scheduleData.divider.indexOf((scheduleData.currentHighlight.index - 1)) !== -1) {
         offset = {
-          x: highlightElement.offsetLeft - countdownContainer.offsetWidth / 2 - Number(getComputedStyle(highlightElement).marginLeft.replace('px', '')) - getComputedStyle(root).getPropertyValue('--divider-width').replace('px', '') / 2 - getComputedStyle(root).getPropertyValue('--divider-margin').replace('px', ''),
+          x: highlightElement.offsetLeft - cacheCountdownContainerOffsetWidth / 2 - marginLeft - dividerWidth / 2 - dividerMargin,
           y: classContainer.offsetHeight
-        }
+        };
       } else {
         offset = {
-          x: highlightElement.offsetLeft - countdownContainer.offsetWidth / 2 - Number(getComputedStyle(highlightElement).marginLeft.replace('px', '')),
+          x: highlightElement.offsetLeft - cacheCountdownContainerOffsetWidth / 2 - marginLeft,
           y: classContainer.offsetHeight
-        }
+        };
       }
     }
+
     if (scheduleData.currentHighlight.isEnd) {
       offset = {
-        x: highlightElement.offsetLeft - countdownContainer.offsetWidth / 2 + highlightElement.offsetWidth + Number(getComputedStyle(highlightElement).marginLeft.replace('px', '')),
+        x: highlightElement.offsetLeft - cacheCountdownContainerOffsetWidth / 2 + highlightElement.offsetWidth + marginLeft,
         y: classContainer.offsetHeight
-      }
+      };
     }
-    countdownContainer.style.left = offset.x + 'px'
-    countdownContainer.style.top = offset.y + 'px'
+
+    countdownContainer.style.left = offset.x + 'px';
+    countdownContainer.style.top = offset.y + 'px';
   }
+
 
   function setSidebar() {
     let date = getCurrentEditedDate()
@@ -311,13 +325,28 @@
   })
 
   ipcRenderer.on('fromCloud', () => {
-    let uri = localStorage.getItem('url');
-    ipcRenderer.send('fromCloud', uri === null ? "https://class.khbit.cn/" : uri.toString())
+    let uri = localStorage.getItem('server');
+    ipcRenderer.send('fromCloud', uri === null ? "class.khbit.cn" : uri.toString())
+  })
+
+  ipcRenderer.on('setClass', () => {
+    let uri = localStorage.getItem('class');
+    ipcRenderer.send('setClass', uri === null ? "39/2023/1" : uri.toString())
   })
 
   ipcRenderer.on('setCloudUrl', (e, arg) => {
     url = arg
-    localStorage.setItem('url', arg.toString())
+    localStorage.setItem('server', arg.toString())
+  })
+
+  ipcRenderer.on('setCloudClass', (e, arg) => {
+    url = arg
+    localStorage.setItem('class', arg.toString())
+  })
+
+  ipcRenderer.on('setCloudSec', (e, arg) => {
+    url = arg
+    localStorage.setItem('server', arg.toString())
   })
 
   ipcRenderer.on('newConfig', (e, arg) => {
