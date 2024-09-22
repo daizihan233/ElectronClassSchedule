@@ -395,6 +395,12 @@
 
   ipcRenderer.on('setWeather', (e, arg) => {
     temperature.innerText = arg["temp"] + "℃"
+    if (arg["temp"] < 24)
+      temperature.style.color = "#66CCFF"
+    else if (arg["temp"] <= 26)
+      temperature.style.color = "#39C5BB"
+    else
+      temperature.style.color = "#EE0000"
     weather.innerText = arg["weat"]
   })
 
