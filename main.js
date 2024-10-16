@@ -34,8 +34,12 @@ function connect(rejectUnauthorized = true) {
     ws.on('open', () => {
         console.log('Connected to server');
         setInterval(() => {
-            ws.ping(); // 发送心跳消息
-            console.log('Heartbeat sent');
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.ping(); // 发送心跳消息
+                console.log('Heartbeat sent');
+            } else {
+                console.log('Disconnected from server, No heartbeat sent');
+            }
         }, 25000); // 每 25 秒发送一次心跳
     });
 
@@ -418,13 +422,26 @@ ipcMain.on('getWeather', () => {
         `${agreement}://${server}/api/weather/${store.get('local', "Nanjing/Gulou")}`
     )
     let weatherData;
+    let flag = true;
     try {
         request.on('response', (response) => {
             response.on('data', (chunk) => {
-                weatherData = JSON.parse(chunk.toString())
+                try {
+                    weatherData = JSON.parse(chunk.toString())
+                } catch (e) {
+                    console.error(e)
+                }
             })
             response.on('end', () => {
-                win.webContents.send('setWeather', weatherData)
+                if (flag) win.webContents.send('setWeather', weatherData)
+                else {
+                    console.log("Can't get weather data, because the API is not responding, try again later")
+                    setTimeout(win.webContents.send, 5000, 'updateWeather')
+                }
+            })
+            response.on('error', (error) => {
+                console.error(error, "Can't get weather data, because the server or network is not working, try again later")
+                setTimeout(win.webContents.send, 5000, 'updateWeather')
             })
         })
     } catch (e) {
