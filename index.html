@@ -351,6 +351,9 @@
 
   ipcRenderer.on('newConfig', (e, arg) => {
     scheduleConfig = arg
+    for (const key in scheduleConfig.css_style) {
+      root.style.setProperty(key, scheduleConfig.css_style[key])
+    }
     scheduleData = getScheduleData();
     setScheduleClass()
     setSidebar()
