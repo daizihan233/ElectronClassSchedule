@@ -8,6 +8,9 @@ const _scheduleConfig = {
     // 直接将true或false填入冒号后边，没有引号
     week_display: true,
 
+    // 顶部横幅：顶部横幅内容，为空则不显示横幅
+    banner_text: '',
+
     // 科目名称：所有课程科目的简写及其对应全称，冒号前面(key)为简写，后面(value)为全称，不限字数，
     // 若存在多个课程简写相同，需要加以区分，可以为简写添加下角标，使用@分隔，如'自@语'，@前为简写，@后为下角标
     // 要求必须做到覆盖完全，否则可能会保错
@@ -98,6 +101,7 @@ const _scheduleConfig = {
         '--divider-margin': '6px', // 分隔线外边距
         '--triangle-size': '16px', // 倒计时框上方小三角箭头的大小
         '--sub-font-size': '20px', // 中间课表中的课程下角标(X@X)的字体大小
+        '--banner-height': '30px', // 顶部横幅高度
     }
 }
 
