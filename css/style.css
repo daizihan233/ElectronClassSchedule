@@ -211,5 +211,6 @@
     /* 说实话我也不知道为啥这里可以这么写，但这么写确实成了 */
     flex: 1;
     width: 0;
+    max-width: calc(100% - var(--global-border-radius) - 2px);
 }
 
