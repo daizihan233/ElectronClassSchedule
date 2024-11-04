@@ -105,11 +105,12 @@
         classHtml += '<div class="divider"></div>'
     }
     classContainer.innerHTML = classHtml
+    bannerText.stop()
+    bannerText.start()
     if (scheduleConfig['banner_text']) {
       if (scheduleConfig['banner_text'] !== bannerText.innerText) {
         bannerText.innerText = scheduleConfig['banner_text']
         banner.style.display = 'flex'
-        bannerText.start()
       }
     } else {
       banner.style.display = 'none'
