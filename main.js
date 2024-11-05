@@ -514,3 +514,6 @@ ipcMain.on('RequestSyncConfig', () => {
     })
 })
 
+process.on('uncaughtException', (error) => {
+    console.info('error:', error)
+})
