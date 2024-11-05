@@ -216,7 +216,7 @@ ipcMain.on('getWeekIndex', (e, arg) => {
         },
         {
             icon: basePath + 'image/toggle.png',
-            label: '下发级部',
+            label: '更新课表',
             click: () => {
                 win.webContents.send('broadcastSyncConfig')
             }
