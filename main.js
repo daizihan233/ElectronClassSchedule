@@ -1,4 +1,5 @@
-const { app, BrowserWindow, Menu, ipcMain, dialog, screen, Tray, shell} = require('electron')
+const electron = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, dialog, screen, Tray, shell} = electron
 const path = require('path');
 const fs = require('fs')
 const os = require('os')
@@ -142,6 +143,14 @@ app.whenReady().then(() => {
         if (store.get("isFromCloud", false)) {
             setTimeout(getScheduleFromCloud, 5000)
         }
+    })
+    electron.powerMonitor.on("suspend", (e) => {
+        e.preventDefault()
+        app.quit()
+    })
+    electron.powerMonitor.on("shutdown", (e) => {
+        e.preventDefault()
+        app.quit()
     })
     const handle = win.getNativeWindowHandle();
     DisableMinimize(handle); // Thank to peter's project https://github.com/tbvjaos510/electron-disable-minimize
