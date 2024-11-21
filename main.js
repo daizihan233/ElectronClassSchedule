@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain, dialog, screen, Tray, shell, net} = require('electron')
+const { app, BrowserWindow, Menu, ipcMain, dialog, screen, Tray, shell} = require('electron')
 const path = require('path');
 const fs = require('fs')
 const os = require('os')
@@ -489,21 +489,21 @@ ipcMain.on('RequestSyncConfig', () => {
                             title: '提示',
                             message: '已下发成功',
                             buttons: ['已阅'],
-                        }).then(r => {});
+                        }).then(() => {});
                     } else if (response.statusCode === 401) {
                         dialog.showMessageBox({
                             type: 'error',
                             title: '错误',
                             message: '服务端返回错误代码 401，这可能由于密码错误',
                             buttons: ['已阅'],
-                        }).then(r => {});
+                        }).then(() => {});
                     } else {
                         dialog.showMessageBox({
                             type: 'error',
                             title: '错误',
                             message: `服务端返回错误代码 ${response.statusCode}，这可能是因为服务端错误或正在被攻击`,
                             buttons: ['已阅'],
-                        }).then(r => {});
+                        }).then(() => {});
                     }
                 })
             })
