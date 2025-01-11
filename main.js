@@ -3,6 +3,7 @@ const { app, BrowserWindow, Menu, ipcMain, dialog, screen, Tray, shell} = electr
 const path = require('path');
 const fs = require('fs')
 const os = require('os')
+const pkg = require("./package.json")
 const createShortcut = require('windows-shortcuts')
 const startupFolderPath = path.join(os.homedir(), 'AppData', 'Roaming', 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup');
 const prompt = require('electron-prompt');
@@ -135,6 +136,30 @@ function getScheduleFromCloud() {
     })
     request.end()
 }
+function getNewVersionFromCloud() {
+    const { net } = require('electron')
+    const url = `${agreement}://${server}/api/update`
+    // noinspection JSCheckFunctionSignatures
+    const request = net.request(url)
+    let versionData;
+    request.on('response', (response) => {
+        response.on('data', (chunk) => {
+            versionData = JSON.parse(chunk.toString())
+            console.log(versionData)
+        })
+        response.on('end', () => {
+            console.log('No more data in response.')
+            if (Number.parseInt(versionData['version']) > Number.parseInt(pkg.version)) {
+                console.log(`发现新版本！${pkg.version} -> ${versionData['version']}`)
+                if (!app.isPackaged) return;
+                // TODO: 自动更新逻辑
+            } else {
+                console.log(`暂无新版本 Now: ${pkg.version} | Last: ${versionData['version']}`)
+            }
+        })
+    })
+    request.end()
+}
 app.whenReady().then(() => {
     createWindow()
     Menu.setApplicationMenu(null)
@@ -142,6 +167,7 @@ app.whenReady().then(() => {
         win.webContents.send('getWeekIndex');
         if (store.get("isFromCloud", false)) {
             setTimeout(getScheduleFromCloud, 5000)
+            setTimeout(getNewVersionFromCloud, 10000)
         }
     })
     electron.powerMonitor.on("suspend", (e) => {
