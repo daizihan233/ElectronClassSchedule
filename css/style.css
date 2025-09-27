@@ -200,17 +200,35 @@
     margin-bottom: 4px;
     padding: 0;
     height: var(--banner-height);
+    min-width: 20%;
 }
 
 
-
 #bannerText {
-    font-size: calc(var(--banner-height) * 0.9);
+    font-size: calc(var(--banner-height) * 0.8);
     color: rgba(255, 255, 255, 1);
     font-family: Sou;
     /* 说实话我也不知道为啥这里可以这么写，但这么写确实成了 */
     flex: 1;
     width: 0;
     max-width: calc(100% - var(--global-border-radius) - 2px);
+    overflow: hidden; /* 隐藏超出内容 */
+    position: relative; /* 为滚动轨道定位 */
+    text-align: center;
 }
 
+/* 短文本静止时剧中显示 */
+#bannerText.centered {
+    text-align: center;
+}
+
+/* --- 跑马灯 polyfill 轨道样式 --- */
+#bannerText .marquee-track {
+    display: inline-block;
+    white-space: nowrap; /* 单行滚动 */
+    will-change: transform; /* 优化平移动画 */
+}
+#bannerText .marquee-seg,
+#bannerText .marquee-gap {
+    display: inline-block;
+}

@@ -15,7 +15,8 @@
 <body>
   <div class="globalContainer" id="globalContainer">
     <div class="banner background" id="banner">
-      <marquee id="bannerText"></marquee>
+      <!-- 用自定义容器替代原 <marquee>，id 保持不变以兼容现有 JS -->
+      <div id="bannerText" class="marquee"></div>
     </div>
     <div class="classContainer background" id="classContainer">
       <div class="class">加</div>
@@ -76,6 +77,165 @@
     timetable: null,
     divider: [null, null]
   }
+
+  // 跑马灯 polyfill：为 #bannerText 提供 start()/stop() 与滚动效果
+  ;(() => {
+    const el = bannerText;
+    if (!el) return;
+
+    // 内部状态
+    let rafId = null;
+    let lastTs = 0;
+    let offsetX = 0; // 当前偏移（px）
+    let textWidth = 0; // 单段文本宽度（含间隔）
+    let needScroll = false;
+    let lastText = '';
+    const speed = 80; // px/秒，可按需调整或做成配置
+    let observer; // 提升 observer，便于构建期间断开监听
+
+    // 结构：track 包两段相同文本，中间有间隔，循环滚动
+    function buildStructure(text) {
+      // 避免自触发的 MutationObserver 回调
+      if (observer) observer.disconnect();
+      el._updating = true;
+      // 先清空再放置原始文本，以便保持 el.innerText 可被外部获取/比较
+      el.textContent = text || '';
+      // 如果文本为空，直接退出
+      if (!text) {
+        cleanupTrack();
+        el._updating = false;
+        // 重连观察
+        if (observer) observer.observe(el, { characterData: true, childList: true, subtree: true });
+        return;
+      }
+      // 创建滚动轨道
+      const track = document.createElement('div');
+      track.className = 'marquee-track';
+      const seg1 = document.createElement('span');
+      seg1.className = 'marquee-seg';
+      seg1.textContent = text;
+      const gap = document.createElement('span');
+      gap.className = 'marquee-gap';
+      const gapText = '\u00A0\u00A0\u00A0\u00A0';
+      gap.textContent = gapText;
+      const seg2 = document.createElement('span');
+      seg2.className = 'marquee-seg';
+      seg2.textContent = text;
+
+      track.appendChild(seg1);
+      track.appendChild(gap);
+      track.appendChild(seg2);
+
+      // 清空后插入轨道
+      el.innerHTML = '';
+      el.appendChild(track);
+      el._track = track;
+
+      // 量测宽度与是否需要滚动
+      const measurer = document.createElement('span');
+      measurer.style.visibility = 'hidden';
+      measurer.style.position = 'absolute';
+      measurer.style.whiteSpace = 'nowrap';
+      measurer.textContent = text + gapText;
+      el.appendChild(measurer);
+      const containerW = el.clientWidth;
+      const measured = measurer.getBoundingClientRect().width;
+      el.removeChild(measurer);
+      textWidth = Math.ceil(measured);
+      needScroll = textWidth > containerW;
+
+      // 如果不需要滚动，静止显示一段文本
+      if (!needScroll) {
+        track.style.transform = 'translateX(0)';
+        // 用单段文本替换，避免 innerText 被重复文本影响
+        el.textContent = text;
+        cleanupTrack();
+        el.classList.add('centered');
+      } else {
+        // 保证轨道存在
+        if (!el._track) el.appendChild(track);
+        el.classList.remove('centered');
+      }
+
+      // 重置状态
+      offsetX = 0;
+      lastText = text;
+      el._updating = false;
+      // 重连观察
+      if (observer) observer.observe(el, { characterData: true, childList: true, subtree: true });
+    }
+
+    function cleanupTrack() {
+      if (el._track && el.contains(el._track)) {
+        el.removeChild(el._track);
+      }
+      el._track = null;
+    }
+
+    function loop(ts) {
+      if (!el._track) { rafId = null; return; }
+      if (!lastTs) lastTs = ts;
+      const dt = (ts - lastTs) / 1000; // 秒
+      lastTs = ts;
+      offsetX -= speed * dt;
+      while (offsetX <= -textWidth) {
+        offsetX += textWidth; // 右侧无缝再入
+      }
+      el._track.style.transform = `translateX(${offsetX}px)`;
+      rafId = window.requestAnimationFrame(loop);
+    }
+
+    function start() {
+      if (!el) return;
+      // 若当前是静止文本，需要根据最新文本搭建一次结构
+      const currentText = (el._track ? (el._track.querySelector('.marquee-seg')?.textContent || '') : (el.textContent || ''));
+      buildStructure(currentText);
+      if (!needScroll || !el._track) return;
+      // 若已在跑则不重复
+      if (rafId) return;
+      el.classList.remove('paused');
+      lastTs = 0;
+      rafId = window.requestAnimationFrame(loop);
+    }
+
+    function stop() {
+      if (rafId) {
+        window.cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      el.classList.add('paused');
+    }
+
+    // 对外暴露 start/stop，与原 <marquee> API 对齐
+    el.start = start;
+    el.stop = stop;
+
+    // 监听文本变更（例如外部设置 el.innerText）后重建
+    observer = new MutationObserver(() => {
+      if (el._updating) return;
+      const hasTrack = el._track && el.contains(el._track);
+      // 取最新的纯文本
+      const text = hasTrack ? (el._track.querySelector('.marquee-seg')?.textContent || '') : (el.textContent || '');
+      if (text === lastText) return; // 文本未变化则忽略
+      stop();
+      buildStructure(text);
+      if (banner && getComputedStyle(banner).display !== 'none') {
+        start();
+      }
+    });
+    observer.observe(el, { characterData: true, childList: true, subtree: true });
+
+    // 窗口尺寸改变时重算
+    window.addEventListener('resize', () => {
+      const hasTrack = el._track && el.contains(el._track);
+      const text = hasTrack ? (el._track.querySelector('.marquee-seg')?.textContent || '') : (el.textContent || '');
+      const playing = !!rafId;
+      stop();
+      buildStructure(text);
+      if (playing) start();
+    });
+  })();
+
   function setScheduleClass() {
     let classHtml = '';
     for (let i = 0; i < scheduleData.scheduleArray.length; i++) {
@@ -105,13 +265,15 @@
         classHtml += '<div class="divider"></div>'
     }
     classContainer.innerHTML = classHtml
-    bannerText.stop()
-    bannerText.start()
+
+    // 先更新 banner 文本与可见性，再启动滚动，避免重复构建
     if (scheduleConfig['banner_text']) {
       if (scheduleConfig['banner_text'] !== bannerText.innerText) {
         bannerText.innerText = scheduleConfig['banner_text']
-        banner.style.display = 'flex'
       }
+      banner.style.display = 'flex'
+      bannerText.stop()
+      bannerText.start()
     } else {
       banner.style.display = 'none'
       root.style.setProperty('--banner-height', 0)
@@ -136,7 +298,8 @@
         if (isClassHidden) { // 上课 并且开启了倒计时 并且 隐藏主体 -> 显示小窗口
           countdownContainer.style.display = 'none'
           miniCountdown.style.display = 'block'
-          miniCountdown.innerHTML = `<div class="currentClass">${currentFullName.innerText = scheduleData.currentHighlight.fullName}</div><div class="countdown" style="margin-left:5px">${scheduleData.currentHighlight.countdownText}</div>`
+          // 仅渲染文本，避免对 currentFullName.innerText 的副作用
+          miniCountdown.innerHTML = `<div class="currentClass">${scheduleData.currentHighlight.fullName}</div><div class="countdown" style="margin-left:5px">${scheduleData.currentHighlight.countdownText}</div>`
         } else { // 上课 并且开启了倒计时 并且 不隐藏主体 -> 正常计时
           countdownContainer.style.display = 'block'
           miniCountdown.style.display = 'none'
@@ -447,3 +610,4 @@
 </script>
 
 </html>
+
