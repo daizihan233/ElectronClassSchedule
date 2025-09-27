@@ -8,6 +8,10 @@ const _scheduleConfig = {
     // 直接将true或false填入冒号后边，没有引号
     week_display: true,
 
+    // 天气预警：如果当地有天气预警，使用天气预警替代顶部横幅
+    weather_alert_override: false,
+    weather_alert_brief: false,
+
     // 顶部横幅：顶部横幅内容，为空则不显示横幅
     banner_text: '',
 

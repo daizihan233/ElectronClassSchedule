@@ -15,7 +15,6 @@
 <body>
   <div class="globalContainer" id="globalContainer">
     <div class="banner background" id="banner">
-      <!-- 用自定义容器替代原 <marquee>，id 保持不变以兼容现有 JS -->
       <div id="bannerText" class="marquee"></div>
     </div>
     <div class="classContainer background" id="classContainer">
@@ -60,6 +59,12 @@
   let weather = document.getElementById('weather')
   let bannerText = document.getElementById('bannerText')
   let banner = document.getElementById('banner')
+  // 天气预警字符串
+  let weatherWarn = ''
+  // 天气预警更新时间戳（ms）
+  let weatherWarnTs = 0
+  // 默认横幅高度（用于从 0 恢复）
+  let defaultBannerHeight = null
   let root = document.querySelector(':root');
   let isClassCountdown = true
   let isClassHidden = true
@@ -90,25 +95,19 @@
     let textWidth = 0; // 单段文本宽度（含间隔）
     let needScroll = false;
     let lastText = '';
-    const speed = 80; // px/秒，可按需调整或做成配置
+    const speed = 80; // px/秒
     let observer; // 提升 observer，便于构建期间断开监听
 
-    // 结构：track 包两段相同文本，中间有间隔，循环滚动
     function buildStructure(text) {
-      // 避免自触发的 MutationObserver 回调
       if (observer) observer.disconnect();
       el._updating = true;
-      // 先清空再放置原始文本，以便保持 el.innerText 可被外部获取/比较
       el.textContent = text || '';
-      // 如果文本为空，直接退出
       if (!text) {
         cleanupTrack();
         el._updating = false;
-        // 重连观察
         if (observer) observer.observe(el, { characterData: true, childList: true, subtree: true });
         return;
       }
-      // 创建滚动轨道
       const track = document.createElement('div');
       track.className = 'marquee-track';
       const seg1 = document.createElement('span');
@@ -121,17 +120,14 @@
       const seg2 = document.createElement('span');
       seg2.className = 'marquee-seg';
       seg2.textContent = text;
-
       track.appendChild(seg1);
       track.appendChild(gap);
       track.appendChild(seg2);
 
-      // 清空后插入轨道
       el.innerHTML = '';
       el.appendChild(track);
       el._track = track;
 
-      // 量测宽度与是否需要滚动
       const measurer = document.createElement('span');
       measurer.style.visibility = 'hidden';
       measurer.style.position = 'absolute';
@@ -144,24 +140,19 @@
       textWidth = Math.ceil(measured);
       needScroll = textWidth > containerW;
 
-      // 如果不需要滚动，静止显示一段文本
       if (!needScroll) {
         track.style.transform = 'translateX(0)';
-        // 用单段文本替换，避免 innerText 被重复文本影响
         el.textContent = text;
         cleanupTrack();
         el.classList.add('centered');
       } else {
-        // 保证轨道存在
         if (!el._track) el.appendChild(track);
         el.classList.remove('centered');
       }
 
-      // 重置状态
       offsetX = 0;
       lastText = text;
       el._updating = false;
-      // 重连观察
       if (observer) observer.observe(el, { characterData: true, childList: true, subtree: true });
     }
 
@@ -175,7 +166,7 @@
     function loop(ts) {
       if (!el._track) { rafId = null; return; }
       if (!lastTs) lastTs = ts;
-      const dt = (ts - lastTs) / 1000; // 秒
+      const dt = (ts - lastTs) / 1000;
       lastTs = ts;
       offsetX -= speed * dt;
       while (offsetX <= -textWidth) {
@@ -187,11 +178,9 @@
 
     function start() {
       if (!el) return;
-      // 若当前是静止文本，需要根据最新文本搭建一次结构
       const currentText = (el._track ? (el._track.querySelector('.marquee-seg')?.textContent || '') : (el.textContent || ''));
       buildStructure(currentText);
       if (!needScroll || !el._track) return;
-      // 若已在跑则不重复
       if (rafId) return;
       el.classList.remove('paused');
       lastTs = 0;
@@ -206,17 +195,14 @@
       el.classList.add('paused');
     }
 
-    // 对外暴露 start/stop，与原 <marquee> API 对齐
     el.start = start;
     el.stop = stop;
 
-    // 监听文本变更（例如外部设置 el.innerText）后重建
     observer = new MutationObserver(() => {
       if (el._updating) return;
       const hasTrack = el._track && el.contains(el._track);
-      // 取最新的纯文本
       const text = hasTrack ? (el._track.querySelector('.marquee-seg')?.textContent || '') : (el.textContent || '');
-      if (text === lastText) return; // 文本未变化则忽略
+      if (text === lastText) return;
       stop();
       buildStructure(text);
       if (banner && getComputedStyle(banner).display !== 'none') {
@@ -225,7 +211,6 @@
     });
     observer.observe(el, { characterData: true, childList: true, subtree: true });
 
-    // 窗口尺寸改变时重算
     window.addEventListener('resize', () => {
       const hasTrack = el._track && el.contains(el._track);
       const text = hasTrack ? (el._track.querySelector('.marquee-seg')?.textContent || '') : (el.textContent || '');
@@ -244,14 +229,7 @@
         inner = `<div><div style="display:inline">${inner.split('@')[0]}</div><div class="subClass">${inner.split('@')[1]}</div></div>`
       }
       if (scheduleData.currentHighlight.index === i) {
-        if (scheduleData.currentHighlight.fullName === "家长会") {
-          let stri = "热烈欢迎家长们来我校开家长会"
-          classHtml = ''
-          for (const element of stri) {
-            classHtml += `<div class="class">${element}</div>`
-          }
-          break
-        } else if (scheduleData.currentHighlight.isEnd)
+        if (scheduleData.currentHighlight.isEnd)
           classHtml += `<div class="class" id="highlighted" style="color:rgba(166,166,166);">${inner}</div>`
         else if (scheduleData.currentHighlight.type === 'current')
           classHtml += `<div class="class current" id="highlighted">${inner}</div>`
@@ -266,18 +244,8 @@
     }
     classContainer.innerHTML = classHtml
 
-    // 先更新 banner 文本与可见性，再启动滚动，避免重复构建
-    if (scheduleConfig['banner_text']) {
-      if (scheduleConfig['banner_text'] !== bannerText.innerText) {
-        bannerText.innerText = scheduleConfig['banner_text']
-      }
-      banner.style.display = 'flex'
-      bannerText.stop()
-      bannerText.start()
-    } else {
-      banner.style.display = 'none'
-      root.style.setProperty('--banner-height', 0)
-    }
+    // 使用统一规则设置 banner
+    setBanner();
   }
 
 
@@ -411,9 +379,14 @@
     }
   }, 20);
 
+  // 首次应用配置样式
   for (const key in scheduleConfig.css_style) {
     root.style.setProperty(key, scheduleConfig.css_style[key])
   }
+  // 记录默认 banner 高度（用于从 0 恢复）
+  defaultBannerHeight = (scheduleConfig && scheduleConfig.css_style && scheduleConfig.css_style['--banner-height'])
+    || getComputedStyle(document.documentElement).getPropertyValue('--banner-height').trim()
+    || '32px'
 
   let timer
   window.addEventListener("mousemove", event => {
@@ -535,6 +508,8 @@
     scheduleData = getScheduleData();
     setScheduleClass()
     setSidebar()
+    // 配置变化也需应用覆盖规则
+    setBanner();
   })
 
   ipcRenderer.on('ClassCountdown', (e, arg) => {
@@ -583,21 +558,39 @@
     else
       temperature.style.color = "#EE0000"
     weather.innerText = arg["weat"]
-  })
 
-  ipcRenderer.on('getDayOffset', (e, arg) => {
-    if (arg.index === -1) return
-    if (arg.index <= 6) {
-      localStorage.setItem('dayOffset', arg.index.toString())
-      localStorage.setItem('setDayOffsetLastDay', new Date().getDay().toString())
-      dayOffset = arg.index
-      setDayOffsetLastDay = new Date().getDay()
-      return
+    const useBrief = !!scheduleConfig.weather_alert_brief;
+    let candidate = '';
+    if (useBrief && typeof arg["brief_warn"] === 'string') {
+      candidate = arg["brief_warn"].trim();
     }
-    localStorage.setItem('dayOffset', '-1')
-    localStorage.setItem('setDayOffsetLastDay', '-1')
-    dayOffset = -1
-    setDayOffsetLastDay = -1
+    if (!candidate && typeof arg["warn"] === 'string') {
+      candidate = arg["warn"].trim();
+    }
+    if (!candidate) {
+      for (const k of Object.keys(arg || {})) {
+        const v = arg[k];
+        if (typeof v === 'string') {
+          const kl = (k || '').toLowerCase();
+          const isBriefKey = useBrief && kl.includes('brief') && (kl.includes('warn') || kl.includes('alert'));
+          const isWarnKey = kl.includes('warn') || kl.includes('alert');
+          if (isBriefKey || isWarnKey) {
+            const vv = v.trim();
+            if (vv.length > candidate.length) candidate = vv;
+          }
+        }
+      }
+    }
+
+    const ts = Date.now();
+    if (ts >= weatherWarnTs) {
+      weatherWarnTs = ts;
+      weatherWarn = candidate;
+      try { console.log('[Weather] ts=', ts, 'briefMode=', useBrief, 'warn=', weatherWarn, 'override=', !!scheduleConfig.weather_alert_override); } catch (_) {}
+      setBanner();
+    } else {
+      try { console.log('[Weather] drop outdated ts=', ts, 'currentTs=', weatherWarnTs, 'candidate=', candidate); } catch (_) {}
+    }
   })
 
   ipcRenderer.on('updateWeather', () => {
@@ -607,7 +600,42 @@
   ipcRenderer.on('broadcastSyncConfig', () => {
     ipcRenderer.send('RequestSyncConfig', false)
   })
+
+  // 统一控制 banner 文本与动画（天气预警覆盖）
+  function setBanner() {
+    const override = !!scheduleConfig.weather_alert_override;
+    const text = override ? (weatherWarn || '') : (scheduleConfig.banner_text || '');
+
+    if (text && text !== bannerText.innerText) {
+      bannerText.innerText = text;
+    }
+
+    if (text) {
+      banner.style.display = 'flex';
+      const configuredBannerH = scheduleConfig && scheduleConfig.css_style && scheduleConfig.css_style['--banner-height'];
+      const currentH = getComputedStyle(document.documentElement).getPropertyValue('--banner-height').trim();
+      const desiredH = (configuredBannerH || defaultBannerHeight || '32px');
+      if (!currentH || currentH === '0' || currentH === '0px') {
+        root.style.setProperty('--banner-height', desiredH);
+      }
+      // 清理旧轨道，避免 start() 读取到旧文本
+      try {
+        if (bannerText._track && bannerText.contains(bannerText._track)) {
+          bannerText.removeChild(bannerText._track);
+        }
+        bannerText._track = null;
+      } catch (_) {}
+      // 启动或重启滚动
+      bannerText.stop();
+      bannerText.start();
+      try { console.log('[Banner] show override=', override, 'text=', text, 'height=', getComputedStyle(document.documentElement).getPropertyValue('--banner-height')); } catch (_) {}
+    } else {
+      banner.style.display = 'none';
+      bannerText.stop();
+      root.style.setProperty('--banner-height', 0);
+      try { console.log('[Banner] hide override=', override, 'text empty'); } catch (_) {}
+    }
+  }
 </script>
 
 </html>
-
