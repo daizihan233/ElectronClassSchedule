@@ -2,7 +2,7 @@ const _scheduleConfig = {
 
     // 倒计时目标：位于右侧框中的倒计时，输入日期即可，可以是中考高考期末等等，格式YYYY-MM-DD
     // 若想隐藏右侧的倒计时，请在下方冒号后填入'hidden', (包括引号)
-    countdown_target: '2025-1-1',
+    countdown_target: '2026-1-1',
 
     // 星期显示：左侧框是否显示，显示为true，隐藏为false
     // 直接将true或false填入冒号后边，没有引号
