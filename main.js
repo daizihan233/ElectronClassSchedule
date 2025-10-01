@@ -215,13 +215,9 @@ function setupAutoUpdater() {
             const percent = Math.floor(p.percent || 0)
             tray?.setToolTip(`电子课表 - 更新下载中 ${percent}%`)
         })
-        autoUpdater.on('update-downloaded', (info) => {
+        autoUpdater.on('update-downloaded', () => {
             tray?.setToolTip(`电子课表 - 更新可用`)
-            try {
-                console.log('[Updater] update-downloaded -> quitAndInstall', info?.version || '')
-            } catch {
-            }
-            autoUpdater.quitAndInstall()
+            autoUpdater.quitAndInstall(true, true)
         })
         // 仅启动时检查一次
         const check = () => autoUpdater.checkForUpdates().catch(() => {})
@@ -491,7 +487,7 @@ ipcMain.on('getWeekIndex', (e, arg) => {
     ]
     template[arg]?.checked !== undefined && (template[arg].checked = true)
     form = Menu.buildFromTemplate(template)
-    tray.setToolTip('电子课表 - by KuoHu')
+    tray.setToolTip('电子课表 - by KuoHu - ' + app.getVersion())
     function trayClicked() {
         tray.popUpContextMenu(form)
     }
