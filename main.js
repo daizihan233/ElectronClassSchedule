@@ -16,6 +16,8 @@ let template = []
 // 统一资源路径解析，兼容 asar
 const asset = (...p) => path.join(__dirname, ...p)
 
+function doNothing(_) { /* 一些 dialog 会返回一个 promise 但并不需要处理 */ }
+
 // 使用函数动态获取协议与服务器，避免缓存导致不一致
 function getProtocols() {
     const secure = store.get('isSecureConnection', true)
@@ -202,13 +204,6 @@ function setupAutoUpdater() {
         autoUpdater.autoDownload = true
         autoUpdater.autoInstallOnAppQuit = true
         autoUpdater.allowPrerelease = true
-        autoUpdater.logger = {
-            info: console.log,
-            warn: console.warn,
-            error: console.error,
-            debug: console.debug,
-            log: console.log
-        }
         autoUpdater.on('checking-for-update', () => console.log('[Updater] checking-for-update'))
         autoUpdater.on('update-available', (info) => {
             console.log('[Updater] update-available', info?.version)
@@ -313,8 +308,8 @@ ipcMain.on('getWeekIndex', (e, arg) => {
                         console.log('[Updater] Mirror cancelled')
                     } else {
                         store.set('updateBaseUrl', r.toString())
-                        dialog.showMessageBox(win, { message: '更新源已保存，重启应用后生效。' })
-                    }
+                        dialog.showMessageBox(win, {message: '更新源已保存，重启应用后生效。'}).then(doNothing)
+                     }
                 })
             }
         },
@@ -322,11 +317,11 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             label: '检查更新',
             click: () => {
                 if (!app.isPackaged) {
-                    dialog.showMessageBox(win, { message: '开发模式下不检查更新。' })
+                    dialog.showMessageBox(win, { message: '开发模式下不检查更新。' }).then(doNothing)
                     return
                 }
                 if (!isSemver(app.getVersion())) {
-                    dialog.showMessageBox(win, { message: '当前版本号非语义化版本，已禁用自动更新。' })
+                    dialog.showMessageBox(win, { message: '当前版本号非语义化版本，已禁用自动更新。' }).then(doNothing)
                     return
                 }
                 setupAutoUpdater()
@@ -334,7 +329,7 @@ ipcMain.on('getWeekIndex', (e, arg) => {
                 const { autoUpdater } = require('electron-updater')
                 autoUpdater.checkForUpdates().catch((err) => {
                     console.error('[Updater] manual check failed', err)
-                    dialog.showMessageBox(win, { type: 'error', message: '检查更新失败，请稍后再试。' })
+                    dialog.showMessageBox(win, { type: 'error', message: '检查更新失败，请稍后再试。' }).then(doNothing)
                 })
             }
         },
@@ -428,7 +423,7 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             icon: asset('image', 'github.png'),
             label: '源码仓库',
             click: () => {
-                shell.openExternal('https://github.com/daizihan233/ElectronClassSchedule');
+                shell.openExternal('https://github.com/daizihan233/ElectronClassSchedule').then(doNothing);
             }
         },
         {
@@ -525,7 +520,6 @@ ipcMain.on('pop', () => {
     tray.popUpContextMenu(form)
 })
 
-// 补回：天气获取
 ipcMain.on('getWeather', () => {
     const { net } = require('electron')
     const { agreement } = getProtocols()
@@ -560,7 +554,6 @@ ipcMain.on('getWeather', () => {
     request.end()
 })
 
-// 补回：配置广播请求
 ipcMain.on('RequestSyncConfig', () => {
     prompt({
         title: '云端密码',
@@ -575,6 +568,7 @@ ipcMain.on('RequestSyncConfig', () => {
         if (r === null) return;
         const { net } = require('electron')
         const { agreement } = getProtocols()
+        // noinspection JSCheckFunctionSignatures
         const request = net.request({
             method: 'POST',
             url: `${agreement}://${getServer()}/api/broadcast/${classId}`,
@@ -588,11 +582,12 @@ ipcMain.on('RequestSyncConfig', () => {
                 response.on('end', () => {
                     const { dialog } = require('electron');
                     if (response.statusCode === 200) {
-                        dialog.showMessageBox({ type: 'info', title: '提示', message: '已下发成功', buttons: ['已阅'] })
+                        dialog.showMessageBox(
+                            { type: 'info', title: '提示', message: '已下发成功', buttons: ['已阅'] }).then(doNothing)
                     } else if (response.statusCode === 401) {
-                        dialog.showMessageBox({ type: 'error', title: '错误', message: '服务端返回 401，可能密码错误', buttons: ['已阅'] })
+                        dialog.showMessageBox({ type: 'error', title: '错误', message: '服务端返回 401，可能密码错误', buttons: ['已阅'] }).then(doNothing)
                     } else {
-                        dialog.showMessageBox({ type: 'error', title: '错误', message: `服务端返回 ${response.statusCode}` , buttons: ['已阅'] })
+                        dialog.showMessageBox({ type: 'error', title: '错误', message: `服务端返回 ${response.statusCode}` , buttons: ['已阅'] }).then(doNothing)
                     }
                 })
             })
