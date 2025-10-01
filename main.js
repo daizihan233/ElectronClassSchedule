@@ -20,8 +20,9 @@ if (!store.get("isSecureConnection", true)) {
     agreement = "http";
     agreementWs = "ws";
 }
-let server = store.get("server", "class.khbit.cn")
-let classId = store.get("class", "39/2023/1")
+let server = String(store.get("server", "class.khbit.cn"))
+let classId = String(store.get("class", "39/2023/1"))
+console.log('Class:', classId, 'Server:', server, 'Secure:', store.get("isSecureConnection", true));
 const WebSocket = require('ws');
 let ws;
 function connect(rejectUnauthorized = true) {
@@ -69,6 +70,7 @@ function connect(rejectUnauthorized = true) {
     });
 }
 connect();
+// 防止多开w
 if (!app.requestSingleInstanceLock({ key: 'classSchedule' })) {
     app.quit();
 }
@@ -117,6 +119,64 @@ function setAutoLaunch() {
     }
 
 }
+
+// 简单 semver 校验（x.y.z，可带 -/+ 后缀）
+function isSemver(v) {
+    return /^\d+\.\d+\.\d+(?:[-+].*)?$/.test(String(v || ''))
+}
+
+// 自动更新设置（仅打包且版本为 semver 时生效）
+function setupAutoUpdater() {
+    try {
+        if (!app.isPackaged) return;
+        const v = app.getVersion();
+        if (!isSemver(v)) {
+            console.warn('[Updater] disabled due to non-semver version:', v)
+            return;
+        }
+        const { autoUpdater } = require('electron-updater')
+        // 默认镜像地址（latest.yml 与安装包所在目录）- 适配 GitHub 最新发布路径
+        const defaultMirror = 'https://hubproxy.khbit.cn/https://github.com/daizihan233/ElectronClassSchedule/releases/latest/download'
+        let updateBaseUrl = store.get('updateBaseUrl')
+        if (!updateBaseUrl || typeof updateBaseUrl !== 'string' || updateBaseUrl.trim().length === 0) {
+            updateBaseUrl = defaultMirror
+            store.set('updateBaseUrl', updateBaseUrl)
+        }
+        autoUpdater.setFeedURL({ provider: 'generic', url: updateBaseUrl.trim() })
+        autoUpdater.autoDownload = true
+        autoUpdater.autoInstallOnAppQuit = true
+        autoUpdater.allowPrerelease = true
+        autoUpdater.logger = {
+            info: console.log,
+            warn: console.warn,
+            error: console.error,
+            debug: console.debug,
+            log: console.log
+        }
+        autoUpdater.on('checking-for-update', () => console.log('[Updater] checking-for-update'))
+        autoUpdater.on('update-available', (info) => {
+            console.log('[Updater] update-available', info?.version)
+            tray?.setToolTip(`电子课表 - 正在下载更新 ${info?.version || ''}`)
+        })
+        autoUpdater.on('update-not-available', () => console.log('[Updater] update-not-available'))
+        autoUpdater.on('error', (err) => console.error('[Updater] error', err))
+        autoUpdater.on('download-progress', (p) => {
+            const percent = Math.floor(p.percent || 0)
+            tray?.setToolTip(`电子课表 - 更新下载中 ${percent}%`)
+        })
+        autoUpdater.on('update-downloaded', () => {
+            // 静默安装：无需提示，立即重启安装
+            try { console.log('[Updater] update-downloaded -> quitAndInstall') } catch {}
+            autoUpdater.quitAndInstall()
+        })
+        // 仅启动时检查一次
+        const check = () => autoUpdater.checkForUpdates().catch(() => {})
+        setTimeout(check, 3000)
+    } catch (e) {
+        console.error('[Updater] setup failed', e)
+    }
+}
+
 function getScheduleFromCloud() {
     const { net } = require('electron')
     const url = `${agreement}://${server}/${classId}`
@@ -138,6 +198,7 @@ function getScheduleFromCloud() {
 app.whenReady().then(() => {
     createWindow()
     Menu.setApplicationMenu(null)
+    setupAutoUpdater()
     win.webContents.on('did-finish-load', () => {
         win.webContents.send('getWeekIndex');
         if (store.get("isFromCloud", false)) {
@@ -166,6 +227,50 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             checked: store.get('isFromCloud', false),
             click: (e) => {
                 store.set('isFromCloud', e.checked)
+            }
+        },
+        {
+            icon: basePath + 'image/toggle.png',
+            label: '更新源(可选)',
+            click: () => {
+                const current = store.get('updateBaseUrl', '') || ''
+                prompt({
+                    title: '更新源(可选)',
+                    label: '请输入更新源基础地址(需包含 latest.yml 的目录，如 https://your.cdn.com/app)：',
+                    value: current,
+                    inputAttrs: { type: 'string' },
+                    type: 'input',
+                    height: 220,
+                    width: 520,
+                    icon: basePath + 'image/toggle.png',
+                }).then((r) => {
+                    if (r === null) {
+                        console.log('[Updater] Mirror cancelled')
+                    } else {
+                        store.set('updateBaseUrl', r.toString())
+                        dialog.showMessageBox(win, { message: '更新源已保存，重启应用后生效。' })
+                    }
+                })
+            }
+        },
+        {
+            label: '检查更新',
+            click: () => {
+                if (!app.isPackaged) {
+                    dialog.showMessageBox(win, { message: '开发模式下不检查更新。' })
+                    return
+                }
+                if (!isSemver(app.getVersion())) {
+                    dialog.showMessageBox(win, { message: '当前版本号非语义化版本，已禁用自动更新。' })
+                    return
+                }
+                setupAutoUpdater()
+                // 按需加载再调用
+                const { autoUpdater } = require('electron-updater')
+                autoUpdater.checkForUpdates().catch((err) => {
+                    console.error('[Updater] manual check failed', err)
+                    dialog.showMessageBox(win, { type: 'error', message: '检查更新失败，请稍后再试。' })
+                })
             }
         },
         {
@@ -258,7 +363,6 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             icon: basePath + 'image/github.png',
             label: '源码仓库',
             click: () => {
-                // noinspection JSIgnoredPromiseFromCall
                 shell.openExternal('https://github.com/daizihan233/ElectronClassSchedule');
             }
         },
@@ -356,6 +460,83 @@ ipcMain.on('pop', () => {
     tray.popUpContextMenu(form)
 })
 
+// 补回：天气获取
+ipcMain.on('getWeather', () => {
+    const { net } = require('electron')
+    const request = net.request(
+        `${agreement}://${server}/api/weather/${store.get('local', "Nanjing/Gulou")}`
+    )
+    let weatherData;
+    let flag = true;
+    try {
+        request.on('response', (response) => {
+            response.on('data', (chunk) => {
+                try {
+                    weatherData = JSON.parse(chunk.toString())
+                } catch (e) {
+                    console.error(e)
+                }
+            })
+            response.on('end', () => {
+                if (flag) win.webContents.send('setWeather', weatherData)
+                else {
+                    console.log("Can't get weather data, try again later")
+                    setTimeout(() => win.webContents.send('updateWeather'), 5000)
+                }
+            })
+            response.on('error', (error) => {
+                console.error(error, "Weather API error, retry later")
+                setTimeout(() => win.webContents.send('updateWeather'), 5000)
+            })
+        })
+    } catch (e) {
+        console.log(e)
+    }
+    request.end()
+})
+
+// 补回：配置广播请求
+ipcMain.on('RequestSyncConfig', () => {
+    prompt({
+        title: '云端密码',
+        label: '请输入密码：',
+        value: "",
+        inputAttrs: { type: 'password' },
+        type: 'input',
+        height: 180,
+        width: 400,
+        icon: basePath + 'image/toggle.png',
+    }).then((r) => {
+        if (r === null) return;
+        const { net } = require('electron')
+        const request = net.request({
+            method: 'POST',
+            url: `${agreement}://${server}/api/broadcast/${classId}`,
+            headers: {
+                "Authorization": `Basic ${Buffer.from(`ElectronClassSchedule:${r.toString()}`).toString('base64')}`,
+            }
+        })
+        try {
+            request.on('response', (response) => {
+                response.on('data', () => {})
+                response.on('end', () => {
+                    const { dialog } = require('electron');
+                    if (response.statusCode === 200) {
+                        dialog.showMessageBox({ type: 'info', title: '提示', message: '已下发成功', buttons: ['已阅'] })
+                    } else if (response.statusCode === 401) {
+                        dialog.showMessageBox({ type: 'error', title: '错误', message: '服务端返回 401，可能密码错误', buttons: ['已阅'] })
+                    } else {
+                        dialog.showMessageBox({ type: 'error', title: '错误', message: `服务端返回 ${response.statusCode}` , buttons: ['已阅'] })
+                    }
+                })
+            })
+        } catch (e) {
+            console.log(e)
+        }
+        request.end()
+    })
+})
+
 ipcMain.on('getTimeOffset', (e, arg) => {
     prompt({
         title: '计时矫正',
@@ -398,131 +579,4 @@ ipcMain.on('fromCloud', (e, arg) => {
             console.log('[Cloud] ', r.toString());
         }
     })
-})
-
-
-ipcMain.on('setClass', (e, arg) => {
-    prompt({
-        title: '所在班级',
-        label: '请设置所在班级：',
-        value: arg.toString(),
-        inputAttrs: {
-            type: 'string'
-        },
-        type: 'input',
-        height: 180,
-        width: 400,
-        icon: basePath + 'image/toggle.png',
-    }).then((r) => {
-        if (r === null) {
-            console.log('[Cloud] User cancelled');
-        } else {
-            win.webContents.send('setCloudClass', r.toString())
-            store.set("class", r.toString())
-            console.log('[Cloud] ', r.toString());
-        }
-    })
-})
-
-
-ipcMain.on('getWeather', () => {
-    const { net } = require('electron')
-    const request = net.request(
-        `${agreement}://${server}/api/weather/${store.get('local', "Nanjing/Gulou")}`
-    )
-    let weatherData;
-    let flag = true;
-    try {
-        request.on('response', (response) => {
-            response.on('data', (chunk) => {
-                try {
-                    weatherData = JSON.parse(chunk.toString())
-                } catch (e) {
-                    console.error(e)
-                }
-            })
-            response.on('end', () => {
-                if (flag) win.webContents.send('setWeather', weatherData)
-                else {
-                    console.log("Can't get weather data, because the API is not responding, try again later")
-                    setTimeout(win.webContents.send, 5000, 'updateWeather')
-                }
-            })
-            response.on('error', (error) => {
-                console.error(error, "Can't get weather data, because the server or network is not working, try again later")
-                setTimeout(win.webContents.send, 5000, 'updateWeather')
-            })
-        })
-    } catch (e) {
-        console.log(e)
-    }
-    request.end()
-})
-
-ipcMain.on('RequestSyncConfig', () => {
-    prompt({
-        title: '云端密码',
-        label: '请输入密码：',
-        value: "",
-        inputAttrs: {
-            type: 'password'
-        },
-        type: 'input',
-        height: 180,
-        width: 400,
-        icon: basePath + 'image/toggle.png',
-    }).then((r) => {
-        const { net } = require('electron')
-        const request = net.request(
-            {
-                method: 'POST',
-                url: `${agreement}://${server}/api/broadcast/${classId}`,
-                headers: {
-                    "Authorization": `Basic ${Buffer.from(
-                        `ElectronClassSchedule:${r.toString()}`
-                    ).toString('base64')}`,
-                }
-            }
-        )
-        try {
-            request.on('response', (response) => {
-                response.on('data', (chunk) => {
-                    console.log(chunk.toString())
-                })
-                response.on('end', () => {
-                    console.log(response.statusCode)
-                    const { dialog } = require('electron');
-                    if (response.statusCode === 200) {
-                        dialog.showMessageBox({
-                            type: 'info',
-                            title: '提示',
-                            message: '已下发成功',
-                            buttons: ['已阅'],
-                        }).then(() => {});
-                    } else if (response.statusCode === 401) {
-                        dialog.showMessageBox({
-                            type: 'error',
-                            title: '错误',
-                            message: '服务端返回错误代码 401，这可能由于密码错误',
-                            buttons: ['已阅'],
-                        }).then(() => {});
-                    } else {
-                        dialog.showMessageBox({
-                            type: 'error',
-                            title: '错误',
-                            message: `服务端返回错误代码 ${response.statusCode}，这可能是因为服务端错误或正在被攻击`,
-                            buttons: ['已阅'],
-                        }).then(() => {});
-                    }
-                })
-            })
-        } catch (e) {
-            console.log(e)
-        }
-        request.end()
-    })
-})
-
-process.on('uncaughtException', (error) => {
-    console.info('error:', error)
 })

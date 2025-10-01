@@ -7,35 +7,67 @@
   "license": "GPLv3",
   "scripts": {
     "debug": "chcp 65001 && electron . --enable-logging",
-    "start": "electron-forge start",
     "rebuild": "electron-rebuild",
-    "build": "node build.js",
-    "buildNew": "electron-packager . classSchedule --platform=win32 --arch=x64 --out=./out --app-version=0.0.1 --overwrite --ignore",
-    "package": "electron-forge package",
-    "make": "electron-forge make"
+    "build": "electron-builder --win --x64",
+    "dist": "electron-builder --win --x64"
   },
   "devDependencies": {
-    "@electron-forge/cli": "^7.4.0",
-    "@electron-forge/maker-deb": "^7.4.0",
-    "@electron-forge/maker-rpm": "^7.4.0",
-    "@electron-forge/maker-squirrel": "^7.4.0",
-    "@electron-forge/maker-zip": "^7.4.0",
-    "@electron-forge/plugin-auto-unpack-natives": "^7.4.0",
-    "@electron-forge/plugin-fuses": "^7.4.0",
-    "@electron/fuses": "^1.8.0",
     "@electron/rebuild": "^3.6.0",
     "electron": "^22.3.27",
-    "electron-packager": "^17.1.2",
-    "dayjs": "^1.11.13"
+    "electron-builder": "^24.13.3"
   },
   "dependencies": {
+    "dayjs": "^1.11.13",
     "electron-disable-minimize": "^2.1.0",
     "electron-prompt": "^1.7.0",
     "electron-squirrel-startup": "^1.0.1",
     "electron-store": "^8.1.0",
+    "electron-updater": "^6.3.9",
     "node-gyp": "^10.0.1",
     "unzip": "^0.1.11",
     "windows-shortcuts": "^0.1.6",
     "ws": "^8.18.0"
+  },
+  "build": {
+    "appId": "cn.khbit.classschedule",
+    "productName": "电子课表",
+    "asar": true,
+    "directories": {
+      "buildResources": "image"
+    },
+    "files": [
+      "**/*",
+      "!out/**",
+      "!**/*.map",
+      "!**/*.log"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "image/icon.png",
+      "publisherName": "KuoHu"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "电子课表",
+      "artifactName": "ElectronClassSchedule-Setup-${version}.${ext}"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "daizihan233",
+        "repo": "ElectronClassSchedule",
+        "releaseType": "release"
+      }
+    ]
   }
 }
