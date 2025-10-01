@@ -80,6 +80,11 @@ function connect(rejectUnauthorized = true) {
                 console.log('Disconnected from server, No heartbeat sent')
             }
         }, 25000)
+        // 重连成功后，主动拉取一次课表，避免丢失推送
+        try {
+            getScheduleFromCloud()
+        } catch {
+        }
     })
 
     // 处理接收到的消息
@@ -650,6 +655,45 @@ ipcMain.on('fromCloud', (e, arg) => {
             win.webContents.send('setCloudUrl', r.toString())
             store.set('server', r.toString())
             console.log('[Cloud] ', r.toString());
+        }
+    })
+})
+
+// 新增：处理“所在班级”提示框与保存
+ipcMain.on('setClass', (e, arg) => {
+    prompt({
+        title: '所在班级',
+        label: '请输入班级标识(例如 39/2023/1)：',
+        value: String(arg ?? store.get('class', '39/2023/1')),
+        inputAttrs: {type: 'string'},
+        type: 'input',
+        height: 180,
+        width: 400,
+        icon: asset('image', 'toggle.png'),
+    }).then((r) => {
+        if (r === null) {
+            console.log('[Class] User cancelled');
+            return;
+        }
+        const val = r.toString();
+        try {
+            store.set('class', val)
+        } catch {
+        }
+        try {
+            win?.webContents?.send('setCloudClass', val)
+        } catch {
+        }
+        // 同步内存中的 classId，随后重连以生效
+        classId = val
+        console.log('[Class] set to', val)
+        try {
+            ws?.close?.()
+        } catch {
+        }
+        try {
+            connect()
+        } catch {
         }
     })
 })
