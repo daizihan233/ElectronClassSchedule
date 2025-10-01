@@ -44,7 +44,7 @@ let lastScheduleData = {
 function parseCountdownTargetLocal(ymd) {
     if (typeof ymd !== 'string') return null;
     const s = ymd.trim();
-    const m = RegExp(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/).exec(s);
+    const m = new RegExp(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/).exec(s);
     if (!m) return null;
     const y = Number(m[1]);
     const mo = Number(m[2]);
@@ -64,7 +64,7 @@ function startOfLocalDay(dt) {
 function dayDiffLocal(a, b) {
     const a0 = startOfLocalDay(a);
     const b0 = startOfLocalDay(b);
-    if (!a0 || !b0) return NaN;
+    if (!a0 || !b0) return Number.NaN;
     const msPerDay = 24 * 60 * 60 * 1000;
     return Math.round((b0 - a0) / msPerDay);
 }
