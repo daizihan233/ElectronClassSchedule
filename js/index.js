@@ -116,14 +116,13 @@ function getScheduleData() {
                 return true;
             }
         }
-        // 没有后续课程，标记为结束
-        const lastShort = currentSchedule.at(-1);
-        const lastFull = scheduleConfig.subject_name[lastShort] || '';
+        // 没有后续课程，标记为结束（放学）
+        const dismissalLabel = (scheduleConfig['end_of_day_label']) || '放学';
         setCurrentHighlightExternal(
             currentHighlight,
-            currentSchedule.length - 1,
+            Math.max(0, currentSchedule.length - 1),
             'upcoming',
-            lastFull,
+            dismissalLabel,
             breakRange.split('-')[1],
             currentTime,
             true
