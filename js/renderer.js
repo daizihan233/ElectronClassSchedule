@@ -28,576 +28,576 @@ let isClassCountdown = true
 let isClassHidden = true
 let isSecureConnection = true // 渲染态标记
 let lastScheduleData = {
-  currentHighlight: {
-    index: null,
-    type: null,
-    fullName: null,
-    countdown: null,
-    countdownText: null
-  },
-  scheduleArray: [null, null, null],
-  timetable: null,
-  divider: [null, null]
+    currentHighlight: {
+        index: null,
+        type: null,
+        fullName: null,
+        countdown: null,
+        countdownText: null
+    },
+    scheduleArray: [null, null, null],
+    timetable: null,
+    divider: [null, null]
 }
 
 // 跑马灯 polyfill（延后初始化）：为 #bannerText 提供 start()/stop() 与滚动效果
 function initBannerMarquee() {
-  const el = bannerText;
-  if (!el) return;
-
-  // 如果已初始化过，避免重复绑定
-  if (el._marqueeInited) return;
-  el._marqueeInited = true;
-
-  // 内部状态
-  let rafId = null;
-  let lastTs = 0;
-  let offsetX = 0; // 当前偏移（px）
-  let textWidth = 0; // 单段文本宽度（含间隔）
-  let needScroll = false;
-  let lastText = '';
-  const speed = 80; // px/秒
-  let observer; // 提升 observer，便于构建期间断开监听
-
-  function cleanupTrack() {
-    if (el._track && el.contains(el._track)) {
-        el._track.remove()
-    }
-    el._track = null;
-  }
-
-  function buildStructure(text) {
-    if (observer) observer.disconnect();
-    el._updating = true;
-    el.textContent = text || '';
-    if (!text) {
-      cleanupTrack();
-      el._updating = false;
-      if (observer) observer.observe(el, { characterData: true, childList: true, subtree: true });
-      return;
-    }
-    const track = document.createElement('div');
-    track.className = 'marquee-track';
-    const seg1 = document.createElement('span');
-    seg1.className = 'marquee-seg';
-    seg1.textContent = text;
-    const gap = document.createElement('span');
-    gap.className = 'marquee-gap';
-    const gapText = '\u00A0\u00A0\u00A0\u00A0';
-    gap.textContent = gapText;
-    const seg2 = document.createElement('span');
-    seg2.className = 'marquee-seg';
-    seg2.textContent = text;
-    track.appendChild(seg1);
-    track.appendChild(gap);
-    track.appendChild(seg2);
-
-    el.innerHTML = '';
-    el.appendChild(track);
-    el._track = track;
-
-    const measurer = document.createElement('span');
-    measurer.style.visibility = 'hidden';
-    measurer.style.position = 'absolute';
-    measurer.style.whiteSpace = 'nowrap';
-    measurer.textContent = text + gapText;
-    el.appendChild(measurer);
-    const containerW = el.clientWidth;
-    const measured = measurer.getBoundingClientRect().width;
-    measurer.remove();
-    textWidth = Math.ceil(measured);
-    needScroll = textWidth > containerW;
-
-    if (!needScroll) {
-      track.style.transform = 'translateX(0)';
-      el.textContent = text;
-      cleanupTrack();
-      el.classList.add('centered');
-    } else {
-      if (!el._track) el.appendChild(track);
-      el.classList.remove('centered');
-    }
-
-    offsetX = 0;
-    lastText = text;
-    el._updating = false;
-    if (observer) observer.observe(el, { characterData: true, childList: true, subtree: true });
-  }
-
-  function loop(ts) {
-    if (!el._track) { rafId = null; return; }
-    if (!lastTs) lastTs = ts;
-    const dt = (ts - lastTs) / 1000;
-    lastTs = ts;
-    offsetX -= speed * dt;
-    while (offsetX <= -textWidth) {
-      offsetX += textWidth; // 右侧无缝再入
-    }
-    el._track.style.transform = `translateX(${offsetX}px)`;
-    rafId = window.requestAnimationFrame(loop);
-  }
-
-  function start() {
+    const el = bannerText;
     if (!el) return;
-    const currentText = (el._track ? (el._track.querySelector('.marquee-seg')?.textContent || '') : (el.textContent || ''));
-    buildStructure(currentText);
-    if (!needScroll || !el._track) return;
-    if (rafId) return;
-    el.classList.remove('paused');
-    lastTs = 0;
-    rafId = window.requestAnimationFrame(loop);
-  }
 
-  function stop() {
-    if (rafId) {
-      window.cancelAnimationFrame(rafId);
-      rafId = null;
+    // 如果已初始化过，避免重复绑定
+    if (el._marqueeInited) return;
+    el._marqueeInited = true;
+
+    // 内部状态
+    let rafId = null;
+    let lastTs = 0;
+    let offsetX = 0; // 当前偏移（px）
+    let textWidth = 0; // 单段文本宽度（含间隔）
+    let needScroll = false;
+    let lastText = '';
+    const speed = 80; // px/秒
+    let observer; // 提升 observer，便于构建期间断开监听
+
+    function cleanupTrack() {
+        if (el._track && el.contains(el._track)) {
+            el._track.remove()
+        }
+        el._track = null;
     }
-    el.classList.add('paused');
-  }
 
-  el.start = start;
-  el.stop = stop;
+    function buildStructure(text) {
+        if (observer) observer.disconnect();
+        el._updating = true;
+        el.textContent = text || '';
+        if (!text) {
+            cleanupTrack();
+            el._updating = false;
+            if (observer) observer.observe(el, { characterData: true, childList: true, subtree: true });
+            return;
+        }
+        const track = document.createElement('div');
+        track.className = 'marquee-track';
+        const seg1 = document.createElement('span');
+        seg1.className = 'marquee-seg';
+        seg1.textContent = text;
+        const gap = document.createElement('span');
+        gap.className = 'marquee-gap';
+        const gapText = '\u00A0\u00A0\u00A0\u00A0';
+        gap.textContent = gapText;
+        const seg2 = document.createElement('span');
+        seg2.className = 'marquee-seg';
+        seg2.textContent = text;
+        track.appendChild(seg1);
+        track.appendChild(gap);
+        track.appendChild(seg2);
 
-  observer = new MutationObserver(() => {
-    if (el._updating) return;
-    const hasTrack = el._track && el.contains(el._track);
-    const text = hasTrack ? (el._track.querySelector('.marquee-seg')?.textContent || '') : (el.textContent || '');
-    if (text === lastText) return;
-    stop();
-    buildStructure(text);
-    if (banner && getComputedStyle(banner).display !== 'none') {
-      start();
+        el.innerHTML = '';
+        el.appendChild(track);
+        el._track = track;
+
+        const measurer = document.createElement('span');
+        measurer.style.visibility = 'hidden';
+        measurer.style.position = 'absolute';
+        measurer.style.whiteSpace = 'nowrap';
+        measurer.textContent = text + gapText;
+        el.appendChild(measurer);
+        const containerW = el.clientWidth;
+        const measured = measurer.getBoundingClientRect().width;
+        measurer.remove();
+        textWidth = Math.ceil(measured);
+        needScroll = textWidth > containerW;
+
+        if (needScroll) {
+            if (!el._track) el.appendChild(track);
+            el.classList.remove('centered');
+        } else {
+            track.style.transform = 'translateX(0)';
+            el.textContent = text;
+            cleanupTrack();
+            el.classList.add('centered');
+        }
+
+        offsetX = 0;
+        lastText = text;
+        el._updating = false;
+        if (observer) observer.observe(el, { characterData: true, childList: true, subtree: true });
     }
-  });
-  observer.observe(el, { characterData: true, childList: true, subtree: true });
 
-  const onResize = () => {
-    const hasTrack = el._track && el.contains(el._track);
-    const text = hasTrack ? (el._track.querySelector('.marquee-seg')?.textContent || '') : (el.textContent || '');
-    const playing = !!rafId;
-    stop();
-    buildStructure(text);
-    if (playing) start();
-  };
-  window.addEventListener('resize', onResize);
-  el._disposeMarquee = () => {
-    try { window.removeEventListener('resize', onResize); } catch (e) { console.debug('[Marquee] removeEventListener failed:', e); }
-    try { if (observer) observer.disconnect(); } catch (e) { console.debug('[Marquee] observer.disconnect failed:', e); }
-    try { stop(); } catch (e) { console.debug('[Marquee] stop failed:', e); }
-  }
+    function loop(ts) {
+        if (!el._track) { rafId = null; return; }
+        if (!lastTs) lastTs = ts;
+        const dt = (ts - lastTs) / 1000;
+        lastTs = ts;
+        offsetX -= speed * dt;
+        while (offsetX <= -textWidth) {
+            offsetX += textWidth; // 右侧无缝再入
+        }
+        el._track.style.transform = `translateX(${offsetX}px)`;
+        rafId = window.requestAnimationFrame(loop);
+    }
+
+    function start() {
+        if (!el) return;
+        const currentText = (el._track ? (el._track.querySelector('.marquee-seg')?.textContent || '') : (el.textContent || ''));
+        buildStructure(currentText);
+        if (!needScroll || !el._track) return;
+        if (rafId) return;
+        el.classList.remove('paused');
+        lastTs = 0;
+        rafId = window.requestAnimationFrame(loop);
+    }
+
+    function stop() {
+        if (rafId) {
+            window.cancelAnimationFrame(rafId);
+            rafId = null;
+        }
+        el.classList.add('paused');
+    }
+
+    el.start = start;
+    el.stop = stop;
+
+    observer = new MutationObserver(() => {
+        if (el._updating) return;
+        const hasTrack = el._track && el.contains(el._track);
+        const text = hasTrack ? (el._track.querySelector('.marquee-seg')?.textContent || '') : (el.textContent || '');
+        if (text === lastText) return;
+        stop();
+        buildStructure(text);
+        if (banner && getComputedStyle(banner).display !== 'none') {
+            start();
+        }
+    });
+    observer.observe(el, { characterData: true, childList: true, subtree: true });
+
+    const onResize = () => {
+        const hasTrack = el._track && el.contains(el._track);
+        const text = hasTrack ? (el._track.querySelector('.marquee-seg')?.textContent || '') : (el.textContent || '');
+        const playing = !!rafId;
+        stop();
+        buildStructure(text);
+        if (playing) start();
+    };
+    window.addEventListener('resize', onResize);
+    el._disposeMarquee = () => {
+        try { window.removeEventListener('resize', onResize); } catch (e) { console.debug('[Marquee] removeEventListener failed:', e); }
+        try { if (observer) observer.disconnect(); } catch (e) { console.debug('[Marquee] observer.disconnect failed:', e); }
+        try { stop(); } catch (e) { console.debug('[Marquee] stop failed:', e); }
+    }
 }
 
 function setScheduleClass() {
-  let classHtml = '';
-  for (let i = 0; i < scheduleData.scheduleArray.length; i++) {
-    let inner = scheduleData.scheduleArray[i]
-    if (scheduleData.scheduleArray[i].indexOf('@') !== -1) {
-      inner = `<div><div style="display:inline">${inner.split('@')[0]}</div><div class="subClass">${inner.split('@')[1]}</div></div>`
+    let classHtml = '';
+    for (let i = 0; i < scheduleData.scheduleArray.length; i++) {
+        let inner = scheduleData.scheduleArray[i]
+        if (scheduleData.scheduleArray[i].indexOf('@') !== -1) {
+            inner = `<div><div style="display:inline">${inner.split('@')[0]}</div><div class="subClass">${inner.split('@')[1]}</div></div>`
+        }
+        if (scheduleData.currentHighlight.index === i) {
+            if (scheduleData.currentHighlight.isEnd)
+                classHtml += `<div class="class" id="highlighted" style="color:rgba(166,166,166);">${inner}</div>`
+            else if (scheduleData.currentHighlight.type === 'current')
+                classHtml += `<div class="class current" id="highlighted">${inner}</div>`
+            else if (scheduleData.currentHighlight.type === 'upcoming')
+                classHtml += `<div class="class upcoming" id="highlighted">${inner}</div>`
+        } else if (scheduleData.currentHighlight.index > i)
+            classHtml += `<div class="class" style="color:rgba(166,166,166);">${inner}</div>`
+        else
+            classHtml += `<div class="class">${inner}</div>`
+        if (scheduleData.divider.indexOf(i) !== -1)
+            classHtml += '<div class="divider"></div>'
     }
-    if (scheduleData.currentHighlight.index === i) {
-      if (scheduleData.currentHighlight.isEnd)
-        classHtml += `<div class="class" id="highlighted" style="color:rgba(166,166,166);">${inner}</div>`
-      else if (scheduleData.currentHighlight.type === 'current')
-        classHtml += `<div class="class current" id="highlighted">${inner}</div>`
-      else if (scheduleData.currentHighlight.type === 'upcoming')
-        classHtml += `<div class="class upcoming" id="highlighted">${inner}</div>`
-    } else if (scheduleData.currentHighlight.index > i)
-      classHtml += `<div class="class" style="color:rgba(166,166,166);">${inner}</div>`
-    else
-      classHtml += `<div class="class">${inner}</div>`
-    if (scheduleData.divider.indexOf(i) !== -1)
-      classHtml += '<div class="divider"></div>'
-  }
-  classContainer.innerHTML = classHtml
+    classContainer.innerHTML = classHtml
 
-  // 使用统一规则设置 banner
-  setBanner();
+    // 使用统一规则设置 banner
+    setBanner();
 }
 
 function setBackgroundDisplay() {
-  let elements = document.getElementsByClassName('background')
-  let element;
-  for (element of elements) {
-    element.style.visibility = (scheduleData.currentHighlight.type === 'current' && isClassHidden) ? 'hidden' : 'visible'
-  }
+    let elements = document.getElementsByClassName('background')
+    let element;
+    for (element of elements) {
+        element.style.visibility = (scheduleData.currentHighlight.type === 'current' && isClassHidden) ? 'hidden' : 'visible'
+    }
 }
 
 function setCountdownerContent() {
-  currentFullName.innerText = scheduleData.currentHighlight.fullName;
-  currentFullName.style.color = scheduleData.currentHighlight.type === 'current' ? 'rgba(0, 255, 10, 1)' : 'rgba(255, 255, 5, 1)'
-  countdownText.innerText = scheduleData.currentHighlight.countdownText;
-  if (scheduleData.currentHighlight.type === 'current') {
-    if (isClassCountdown) {
-      if (isClassHidden) { // 上课 并且开启了倒计时 并且 隐藏主体 -> 显示小窗口
-        countdownContainer.style.display = 'none'
-        miniCountdown.style.display = 'block'
-        // 仅渲染文本，避免对 currentFullName.innerText 的副作用
-        miniCountdown.innerHTML = `<div class="currentClass">${scheduleData.currentHighlight.fullName}</div><div class="countdown" style="margin-left:5px">${scheduleData.currentHighlight.countdownText}</div>`
-      } else { // 上课 并且开启了倒计时 并且 不隐藏主体 -> 正常计时
-        countdownContainer.style.display = 'block'
-        miniCountdown.style.display = 'none'
-      }
-    } else { // 上课 并且关闭了倒计时 -> 都不显示
-      countdownContainer.style.display = 'none'
-      miniCountdown.style.display = 'none'
+    currentFullName.innerText = scheduleData.currentHighlight.fullName;
+    currentFullName.style.color = scheduleData.currentHighlight.type === 'current' ? 'rgba(0, 255, 10, 1)' : 'rgba(255, 255, 5, 1)'
+    countdownText.innerText = scheduleData.currentHighlight.countdownText;
+    if (scheduleData.currentHighlight.type === 'current') {
+        if (isClassCountdown) {
+            if (isClassHidden) { // 上课 并且开启了倒计时 并且 隐藏主体 -> 显示小窗口
+                countdownContainer.style.display = 'none'
+                miniCountdown.style.display = 'block'
+                // 仅渲染文本，避免对 currentFullName.innerText 的副作用
+                miniCountdown.innerHTML = `<div class="currentClass">${scheduleData.currentHighlight.fullName}</div><div class="countdown" style="margin-left:5px">${scheduleData.currentHighlight.countdownText}</div>`
+            } else { // 上课 并且开启了倒计时 并且 不隐藏主体 -> 正常计时
+                countdownContainer.style.display = 'block'
+                miniCountdown.style.display = 'none'
+            }
+        } else { // 上课 并且关闭了倒计时 -> 都不显示
+            countdownContainer.style.display = 'none'
+            miniCountdown.style.display = 'none'
+        }
     }
-  }
-  else { // 下课正常显示
-    countdownContainer.style.display = 'block';
-    miniCountdown.style.display = 'none'
-  }
+    else { // 下课正常显示
+        countdownContainer.style.display = 'block';
+        miniCountdown.style.display = 'none'
+    }
 }
 
 function setCountdownerPosition() {
-  let offset = {};
-  const centerFontSize = Number(getComputedStyle(root).getPropertyValue('--center-font-size').replace('px', ''));
-  const mainHorizontalSpace = Number(getComputedStyle(root).getPropertyValue('--main-horizontal-space').replace('px', ''));
-  const dividerWidth = Number(getComputedStyle(root).getPropertyValue('--divider-width').replace('px', ''));
-  const dividerMargin = Number(getComputedStyle(root).getPropertyValue('--divider-margin').replace('px', ''));
-  if (countdownContainer.style.display !== 'none')
-    cacheCountdownContainerOffsetWidth = countdownContainer.offsetWidth
-  if (scheduleData.currentHighlight.fullName === "家长会") {
-    offset = {
-      x: classContainer.offsetWidth / 2 - cacheCountdownContainerOffsetWidth / 4 - centerFontSize - mainHorizontalSpace * 2,
-      y: classContainer.offsetHeight
-    };
+    let offset = {};
+    const centerFontSize = Number(getComputedStyle(root).getPropertyValue('--center-font-size').replace('px', ''));
+    const mainHorizontalSpace = Number(getComputedStyle(root).getPropertyValue('--main-horizontal-space').replace('px', ''));
+    const dividerWidth = Number(getComputedStyle(root).getPropertyValue('--divider-width').replace('px', ''));
+    const dividerMargin = Number(getComputedStyle(root).getPropertyValue('--divider-margin').replace('px', ''));
+    if (countdownContainer.style.display !== 'none')
+        cacheCountdownContainerOffsetWidth = countdownContainer.offsetWidth
+    if (scheduleData.currentHighlight.fullName === "家长会") {
+        offset = {
+            x: classContainer.offsetWidth / 2 - cacheCountdownContainerOffsetWidth / 4 - centerFontSize - mainHorizontalSpace * 2,
+            y: classContainer.offsetHeight
+        };
+        countdownContainer.style.left = offset.x + 'px';
+        countdownContainer.style.top = offset.y + 'px';
+        return;
+    }
+
+    let highlightElement = document.getElementById('highlighted');
+    if (!highlightElement) return;
+
+    const marginLeft = Number(getComputedStyle(highlightElement).marginLeft.replace('px', ''));
+    if (scheduleData.currentHighlight.type === 'current') {
+        offset = {
+            x: highlightElement.offsetLeft - cacheCountdownContainerOffsetWidth / 2 + highlightElement.offsetWidth / 2,
+            y: classContainer.offsetHeight
+        };
+    } else if (scheduleData.currentHighlight.type === 'upcoming') {
+        if (scheduleData.currentHighlight.index !== 0 && scheduleData.divider.indexOf((scheduleData.currentHighlight.index - 1)) !== -1) {
+            offset = {
+                x: highlightElement.offsetLeft - cacheCountdownContainerOffsetWidth / 2 - marginLeft - dividerWidth / 2 - dividerMargin,
+                y: classContainer.offsetHeight
+            };
+        } else {
+            offset = {
+                x: highlightElement.offsetLeft - cacheCountdownContainerOffsetWidth / 2 - marginLeft,
+                y: classContainer.offsetHeight
+            };
+        }
+    }
+
+    if (scheduleData.currentHighlight.isEnd) {
+        offset = {
+            x: highlightElement.offsetLeft - cacheCountdownContainerOffsetWidth / 2 + highlightElement.offsetWidth + marginLeft,
+            y: classContainer.offsetHeight
+        };
+    }
+
     countdownContainer.style.left = offset.x + 'px';
     countdownContainer.style.top = offset.y + 'px';
-    return;
-  }
-
-  let highlightElement = document.getElementById('highlighted');
-  if (!highlightElement) return;
-
-  const marginLeft = Number(getComputedStyle(highlightElement).marginLeft.replace('px', ''));
-  if (scheduleData.currentHighlight.type === 'current') {
-    offset = {
-      x: highlightElement.offsetLeft - cacheCountdownContainerOffsetWidth / 2 + highlightElement.offsetWidth / 2,
-      y: classContainer.offsetHeight
-    };
-    } else if (scheduleData.currentHighlight.type === 'upcoming') {
-    if (scheduleData.currentHighlight.index !== 0 && scheduleData.divider.indexOf((scheduleData.currentHighlight.index - 1)) !== -1) {
-      offset = {
-        x: highlightElement.offsetLeft - cacheCountdownContainerOffsetWidth / 2 - marginLeft - dividerWidth / 2 - dividerMargin,
-        y: classContainer.offsetHeight
-      };
-    } else {
-      offset = {
-        x: highlightElement.offsetLeft - cacheCountdownContainerOffsetWidth / 2 - marginLeft,
-        y: classContainer.offsetHeight
-      };
-    }
-  }
-
-  if (scheduleData.currentHighlight.isEnd) {
-    offset = {
-      x: highlightElement.offsetLeft - cacheCountdownContainerOffsetWidth / 2 + highlightElement.offsetWidth + marginLeft,
-      y: classContainer.offsetHeight
-    };
-  }
-
-  countdownContainer.style.left = offset.x + 'px';
-  countdownContainer.style.top = offset.y + 'px';
 }
 
 function setSidebar() {
-  let date = getCurrentEditedDate()
-  let week = date.getDay()
-  let data = scheduleConfig.daily_class[week]
-  weekCH.innerText = data.Chinese
-  weekEN.innerText = data.English
-  if (scheduleConfig.countdown_target === 'hidden') {
-    rightSidebar.style.display = 'block'
-    countdownDays.innerText = (date.getMonth() + 1) + " 月 " + date.getDate() + " 日"
-    corunit.innerText = ""
-  } else {
-    rightSidebar.style.display = 'block'
-    countdownDays.innerText = Math.ceil(Math.abs(new Date(scheduleConfig.countdown_target) - date) / (1000 * 60 * 60 * 24)).toString()
-  }
-  leftSidebar.style.display = scheduleConfig.week_display ? 'block' : 'none'
-  ipcRenderer.send('getWeather', false)
+    let date = getCurrentEditedDate()
+    let week = date.getDay()
+    let data = scheduleConfig.daily_class[week]
+    weekCH.innerText = data.Chinese
+    weekEN.innerText = data.English
+    if (scheduleConfig.countdown_target === 'hidden') {
+        rightSidebar.style.display = 'block'
+        countdownDays.innerText = (date.getMonth() + 1) + " 月 " + date.getDate() + " 日"
+        corunit.innerText = ""
+    } else {
+        rightSidebar.style.display = 'block'
+        countdownDays.innerText = Math.ceil(Math.abs(new Date(scheduleConfig.countdown_target) - date) / (1000 * 60 * 60 * 24)).toString()
+    }
+    leftSidebar.style.display = scheduleConfig.week_display ? 'block' : 'none'
+    ipcRenderer.send('getWeather', false)
 }
 
 function tick(reset = false) {
-  scheduleData = getScheduleData();
-  setCountdownerContent()
-  if (JSON.stringify(scheduleData.scheduleArray) !== JSON.stringify(lastScheduleData.scheduleArray) ||
-    scheduleData.currentHighlight.index !== lastScheduleData.currentHighlight.index ||
-    scheduleData.currentHighlight.fullName !== lastScheduleData.currentHighlight.fullName ||
-    scheduleData.currentHighlight.type !== lastScheduleData.currentHighlight.type || reset) {
-    setScheduleClass()
-    setCountdownerPosition()
-    setSidebar()
-    setBackgroundDisplay()
-  }
-  // noinspection JSUnresolvedReference
-  lastScheduleData = $.extend(true, {}, scheduleData)
+    scheduleData = getScheduleData();
+    setCountdownerContent()
+    if (JSON.stringify(scheduleData.scheduleArray) !== JSON.stringify(lastScheduleData.scheduleArray) ||
+        scheduleData.currentHighlight.index !== lastScheduleData.currentHighlight.index ||
+        scheduleData.currentHighlight.fullName !== lastScheduleData.currentHighlight.fullName ||
+        scheduleData.currentHighlight.type !== lastScheduleData.currentHighlight.type || reset) {
+        setScheduleClass()
+        setCountdownerPosition()
+        setSidebar()
+        setBackgroundDisplay()
+    }
+    // noinspection JSUnresolvedReference
+    lastScheduleData = $.extend(true, {}, scheduleData)
 }
 
 // 使用对齐系统秒的调度，避免 20ms 轮询
 function scheduleNextTick() {
-  const now = Date.now();
-  const delay = 1000 - (now % 1000);
-  setTimeout(() => {
-    tick();
-    scheduleNextTick();
-  }, delay);
+    const now = Date.now();
+    const delay = 1000 - (now % 1000);
+    setTimeout(() => {
+        tick();
+        scheduleNextTick();
+    }, delay);
 }
 
 // 初始样式应用与事件注册改为 DOMContentLoaded 后执行
 function initDomAndStart() {
-  // 绑定 DOM 引用
-  classContainer = document.getElementById('classContainer')
-  countdownContainer = document.getElementById('countdownContainer')
-  corunit = document.getElementById('corunit')
-  currentFullName = document.getElementById('currentFullName')
-  countdownText = document.getElementById('countdownText')
-  weekEN = document.getElementById('weekEN')
-  weekCH = document.getElementById('weekCH')
-  countdownDays = document.getElementById('countdownDays')
-  miniCountdown = document.getElementById('miniCountdown')
-  rightSidebar = document.getElementById('rightSidebar')
-  leftSidebar = document.getElementById('leftSidebar')
-  temperature = document.getElementById('temperature')
-  weather = document.getElementById('weather')
-  bannerText = document.getElementById('bannerText')
-  banner = document.getElementById('banner')
-  root = document.querySelector(':root');
-  cacheCountdownContainerOffsetWidth = countdownContainer?.offsetWidth || 0
+    // 绑定 DOM 引用
+    classContainer = document.getElementById('classContainer')
+    countdownContainer = document.getElementById('countdownContainer')
+    corunit = document.getElementById('corunit')
+    currentFullName = document.getElementById('currentFullName')
+    countdownText = document.getElementById('countdownText')
+    weekEN = document.getElementById('weekEN')
+    weekCH = document.getElementById('weekCH')
+    countdownDays = document.getElementById('countdownDays')
+    miniCountdown = document.getElementById('miniCountdown')
+    rightSidebar = document.getElementById('rightSidebar')
+    leftSidebar = document.getElementById('leftSidebar')
+    temperature = document.getElementById('temperature')
+    weather = document.getElementById('weather')
+    bannerText = document.getElementById('bannerText')
+    banner = document.getElementById('banner')
+    root = document.querySelector(':root');
+    cacheCountdownContainerOffsetWidth = countdownContainer?.offsetWidth || 0
 
-  // 初始化跑马灯能力（此顺序确保 start/stop 方法存在）
-  initBannerMarquee();
+    // 初始化跑马灯能力（此顺序确保 start/stop 方法存在）
+    initBannerMarquee();
 
-  // 首次应用配置样式
-  for (const key in scheduleConfig.css_style) {
-    root.style.setProperty(key, scheduleConfig.css_style[key])
-  }
-  // 记录默认 banner 高度（用于从 0 恢复）
-  defaultBannerHeight = (scheduleConfig?.css_style?.['--banner-height'])
-    || getComputedStyle(document.documentElement).getPropertyValue('--banner-height').trim()
-    || '32px'
+    // 首次应用配置样式
+    for (const key in scheduleConfig.css_style) {
+        root.style.setProperty(key, scheduleConfig.css_style[key])
+    }
+    // 记录默认 banner 高度（用于从 0 恢复）
+    defaultBannerHeight = (scheduleConfig?.css_style?.['--banner-height'])
+        || getComputedStyle(document.documentElement).getPropertyValue('--banner-height').trim()
+        || '32px'
 
-  // 鼠标移动监听（依赖 root）
-  // 统一切换透明度（不再在此切换点击穿透）
-  function setDimmed(dim) {
-    if (!root) return;
-    root.style.opacity = dim ? '0.1' : '1';
-  }
+    // 鼠标移动监听（依赖 root）
+    // 统一切换透明度（不再在此切换点击穿透）
+    function setDimmed(dim) {
+        if (!root) return;
+        root.style.opacity = dim ? '0.1' : '1';
+    }
 
-  // 鼠标在窗口内移动：仅此时降低透明度
-  window.addEventListener('mousemove', () => setDimmed(true));
+    // 鼠标在窗口内移动：仅此时降低透明度
+    window.addEventListener('mousemove', () => setDimmed(true));
 
-  // 当鼠标离开窗口或页面失焦时，恢复正常透明度
-  window.addEventListener('mouseout', (_) => {
-    setDimmed(false);
-  });
-  window.addEventListener('blur', () => setDimmed(false));
-  document.addEventListener('mouseleave', () => setDimmed(false));
-  document.addEventListener('pointerleave', () => setDimmed(false));
+    // 当鼠标离开窗口或页面失焦时，恢复正常透明度
+    window.addEventListener('mouseout', (_) => {
+        setDimmed(false);
+    });
+    window.addEventListener('blur', () => setDimmed(false));
+    document.addEventListener('mouseleave', () => setDimmed(false));
+    document.addEventListener('pointerleave', () => setDimmed(false));
 
-  // 初始设置：正常透明度 + 永远开启点击穿透
-  setDimmed(false)
-  ipcRenderer.send('setIgnore', true)
+    // 初始设置：正常透明度 + 永远开启点击穿透
+    setDimmed(false)
+    ipcRenderer.send('setIgnore', true)
 
-  // 使用主进程提供的鼠标位置 + 窗口边界做轮询悬停检测
-  let hoverTimer = null
-  let lastDimmed = null
-  const NEAR_PAD = 12 // 邻近像素容差
-  function isNear(cursor, bounds){
-    if (!cursor || !bounds) return false
-    const x1 = bounds.x - NEAR_PAD
-    const y1 = bounds.y - NEAR_PAD
-    const x2 = bounds.x + (bounds.width || 0) + NEAR_PAD
-    const y2 = bounds.y + (bounds.height || 0) + NEAR_PAD
-    return cursor.x >= x1 && cursor.x <= x2 && cursor.y >= y1 && cursor.y <= y2
-  }
-  async function pollHover(){
-    try {
-      const data = await ipcRenderer.invoke('getCursorAndBounds')
-      const near = isNear(data?.cursor, data?.bounds)
-      if (near !== lastDimmed){
-        setDimmed(!!near)
-        lastDimmed = !!near
-      }
-    } catch {}
-  }
-  hoverTimer = setInterval(pollHover, 100)
-  window.addEventListener('beforeunload', () => { try { clearInterval(hoverTimer) } catch {} })
+    // 使用主进程提供的鼠标位置 + 窗口边界做轮询悬停检测
+    let hoverTimer = null
+    let lastDimmed = null
+    const NEAR_PAD = 12 // 邻近像素容差
+    function isNear(cursor, bounds){
+        if (!cursor || !bounds) return false
+        const x1 = bounds.x - NEAR_PAD
+        const y1 = bounds.y - NEAR_PAD
+        const x2 = bounds.x + (bounds.width || 0) + NEAR_PAD
+        const y2 = bounds.y + (bounds.height || 0) + NEAR_PAD
+        return cursor.x >= x1 && cursor.x <= x2 && cursor.y >= y1 && cursor.y <= y2
+    }
+    async function pollHover(){
+        try {
+            const data = await ipcRenderer.invoke('getCursorAndBounds')
+            const near = isNear(data?.cursor, data?.bounds)
+            if (near !== lastDimmed){
+                setDimmed(!!near)
+                lastDimmed = !!near
+            }
+        } catch {}
+    }
+    hoverTimer = setInterval(pollHover, 100)
+    window.addEventListener('beforeunload', () => { try { clearInterval(hoverTimer) } catch {} })
 
-  // 尝试应用一次 banner，以处理初始化前产生的更新
-  setBanner();
+    // 尝试应用一次 banner，以处理初始化前产生的更新
+    setBanner();
 
-  // 启动心跳渲染
-  scheduleNextTick();
+    // 启动心跳渲染
+    scheduleNextTick();
 }
 
 window.addEventListener('DOMContentLoaded', initDomAndStart)
 
 function setScheduleDialog() {
-  ipcRenderer.send('dialog', {
-    reply: 'getSelectedClassIndex',
-    options: {
-      title: '更改课表',
-      message: `请选择你要更改的课程序号`,
-      buttons: scheduleData.scheduleArray.map((value, index) => { return `第 ${index + 1} 节: ${scheduleConfig.subject_name[value]}` }),
-      cancelId: -1,
-      defaultId: scheduleData.currentHighlight.index
-    }
-  })
+    ipcRenderer.send('dialog', {
+        reply: 'getSelectedClassIndex',
+        options: {
+            title: '更改课表',
+            message: `请选择你要更改的课程序号`,
+            buttons: scheduleData.scheduleArray.map((value, index) => { return `第 ${index + 1} 节: ${scheduleConfig.subject_name[value]}` }),
+            cancelId: -1,
+            defaultId: scheduleData.currentHighlight.index
+        }
+    })
 }
 
 ipcRenderer.on('getSelectedClassIndex', (e, arg) => {
-  if (arg.index === -1) return
-  let classes = Object.keys(scheduleConfig.subject_name).sort((a,b)=>a.localeCompare(b));
-  ipcRenderer.send('dialog', {
-    reply: 'getSelectedChangingClass',
-    index: arg.index,
-    classes: classes,
-    options: {
-      title: '更改课表',
-      message: `将 第 ${arg.index + 1} 节 ${scheduleConfig.subject_name[scheduleData.scheduleArray[arg.index]]} 更改为:`,
-      buttons: classes.map((value) => { return scheduleConfig.subject_name[value] }),
-      cancelId: -1,
-    }
-  })
+    if (arg.index === -1) return
+    let classes = Object.keys(scheduleConfig.subject_name).sort((a,b)=>a.localeCompare(b));
+    ipcRenderer.send('dialog', {
+        reply: 'getSelectedChangingClass',
+        index: arg.index,
+        classes: classes,
+        options: {
+            title: '更改课表',
+            message: `将 第 ${arg.index + 1} 节 ${scheduleConfig.subject_name[scheduleData.scheduleArray[arg.index]]} 更改为:`,
+            buttons: classes.map((value) => { return scheduleConfig.subject_name[value] }),
+            cancelId: -1,
+        }
+    })
 })
 
 ipcRenderer.on('getSelectedChangingClass', (e, arg) => {
-  if (arg.index === -1) return
-  let index = arg.arg.index;
-  let selectedClass = arg.arg.classes[arg.index];
-  const date = getCurrentEditedDate();
-  const dayOfWeek = getCurrentEditedDay(date);
-  scheduleConfig.daily_class[dayOfWeek].classList[index] = selectedClass;
+    if (arg.index === -1) return
+    let index = arg.arg.index;
+    let selectedClass = arg.arg.classes[arg.index];
+    const date = getCurrentEditedDate();
+    const dayOfWeek = getCurrentEditedDay(date);
+    scheduleConfig.daily_class[dayOfWeek].classList[index] = selectedClass;
 })
 
 ipcRenderer.on('openSettingDialog', () => {
-  setScheduleDialog()
+    setScheduleDialog()
 })
 
 document.addEventListener("click", function (event) {
-  if (event?.target?.classList?.contains('options')) {
-    ipcRenderer.send('pop')
-  }
+    if (event?.target?.classList?.contains('options')) {
+        ipcRenderer.send('pop')
+    }
 });
 
 ipcRenderer.on('setWeekIndex', (e, arg) => {
-  scheduleConfig = JSON.parse(JSON.stringify(_scheduleConfig))
-  weekIndex = arg
-  localStorage.setItem('weekIndex', weekIndex.toString())
+    scheduleConfig = JSON.parse(JSON.stringify(_scheduleConfig))
+    weekIndex = arg
+    localStorage.setItem('weekIndex', weekIndex.toString())
 })
 
 ipcRenderer.on('getWeekIndex', () => {
-  let index = localStorage.getItem('weekIndex');
-  ipcRenderer.send('getWeekIndex', index === null ? 0 : Number(index))
+    let index = localStorage.getItem('weekIndex');
+    ipcRenderer.send('getWeekIndex', index === null ? 0 : Number(index))
 })
 
 ipcRenderer.on('getTimeOffset', () => {
-  let offset = localStorage.getItem('timeOffset');
-  ipcRenderer.send('getTimeOffset', offset === null ? 0 : Number(offset))
+    let offset = localStorage.getItem('timeOffset');
+    ipcRenderer.send('getTimeOffset', offset === null ? 0 : Number(offset))
 })
 
 ipcRenderer.on('setTimeOffset', (e, arg) => {
-  timeOffset = arg
-  localStorage.setItem('timeOffset', arg.toString())
+    timeOffset = arg
+    localStorage.setItem('timeOffset', arg.toString())
 })
 
 ipcRenderer.on('fromCloud', () => {
-  let uri = localStorage.getItem('server');
-  ipcRenderer.send('fromCloud', uri === null ? "class.khbit.cn" : uri.toString())
+    let uri = localStorage.getItem('server');
+    ipcRenderer.send('fromCloud', uri === null ? "class.khbit.cn" : uri.toString())
 })
 
 ipcRenderer.on('setClass', () => {
-  let uri = localStorage.getItem('class');
-  ipcRenderer.send('setClass', uri === null ? "39/2023/1" : uri.toString())
+    let uri = localStorage.getItem('class');
+    ipcRenderer.send('setClass', uri === null ? "39/2023/1" : uri.toString())
 })
 
 ipcRenderer.on('setCloudUrl', (e, arg) => {
-  localStorage.setItem('server', arg.toString())
+    localStorage.setItem('server', arg.toString())
 })
 
 ipcRenderer.on('setCloudClass', (e, arg) => {
-  localStorage.setItem('class', arg.toString())
+    localStorage.setItem('class', arg.toString())
 })
 
 ipcRenderer.on('setCloudSec', (e, arg) => {
-  // 渲染层仅记录标志，具体生效由主进程维护
-  isSecureConnection = !!arg
-  console.log('[Renderer] setCloudSec =', isSecureConnection)
+    // 渲染层仅记录标志，具体生效由主进程维护
+    isSecureConnection = !!arg
+    console.log('[Renderer] setCloudSec =', isSecureConnection)
 })
 
 // 小函数：温度与天气状态更新
 function applyTemperature(arg){
-  if (!temperature || !weather) return; // DOM 未就绪时跳过，避免警告
-  const t = Number(arg['temp'])
-  temperature.innerText = (isNaN(t) ? '-' : t) + "℃"
-  if (!isNaN(t)){
-    if (t < 24) temperature.style.color = "#66CCFF"
-    else if (t <= 26) temperature.style.color = "#5FBC21"
-    else temperature.style.color = "#EE0000"
-  }
-  weather.innerText = String(arg['weat'] ?? '')
+    if (!temperature || !weather) return; // DOM 未就绪时跳过，避免警告
+    const t = Number(arg['temp'])
+    temperature.innerText = (isNaN(t) ? '-' : t) + "℃"
+    if (!isNaN(t)){
+        if (t < 24) temperature.style.color = "#66CCFF"
+        else if (t <= 26) temperature.style.color = "#5FBC21"
+        else temperature.style.color = "#EE0000"
+    }
+    weather.innerText = String(arg['weat'] ?? '')
 }
 
 // 辅助：标准化字符串
 function normalizeStr(x){
-  return (typeof x === 'string') ? x.trim() : ''
+    return (typeof x === 'string') ? x.trim() : ''
 }
 // 辅助：键名是否看起来是预警字段
 function looksWarnKey(key, useBrief){
-  const kl = String(key || '').toLowerCase()
-  const hasWarn = kl.includes('warn') || kl.includes('alert')
-  if (!hasWarn) return false
-  return useBrief ? kl.includes('brief') : true
+    const kl = String(key || '').toLowerCase()
+    const hasWarn = kl.includes('warn') || kl.includes('alert')
+    if (!hasWarn) return false
+    return useBrief ? kl.includes('brief') : true
 }
 
 // 小函数：选择天气预警文本
 function pickWeatherWarn(data, useBrief){
-  if (!data) return ''
-  const direct = normalizeStr(useBrief ? data['brief_warn'] : '') || normalizeStr(data.warn)
-  if (direct) return direct
-  let best = ''
-  for (const [k, v] of Object.entries(data)){
-    if (!looksWarnKey(k, useBrief)) continue
-    const vv = normalizeStr(v)
-    if (vv && vv.length > best.length) best = vv
-  }
-  return best
+    if (!data) return ''
+    const direct = normalizeStr(useBrief ? data['brief_warn'] : '') || normalizeStr(data.warn)
+    if (direct) return direct
+    let best = ''
+    for (const [k, v] of Object.entries(data)){
+        if (!looksWarnKey(k, useBrief)) continue
+        const vv = normalizeStr(v)
+        if (vv && vv.length > best.length) best = vv
+    }
+    return best
 }
 
 ipcRenderer.on('newConfig', (e, arg) => {
-  scheduleConfig = arg
-  for (const key in scheduleConfig.css_style) {
-    root.style.setProperty(key, scheduleConfig.css_style[key])
-  }
-  scheduleData = getScheduleData();
-  setScheduleClass()
-  setSidebar()
-  // 配置变化也需应用覆盖规则
-  setBanner();
+    scheduleConfig = arg
+    for (const key in scheduleConfig.css_style) {
+        root.style.setProperty(key, scheduleConfig.css_style[key])
+    }
+    scheduleData = getScheduleData();
+    setScheduleClass()
+    setSidebar()
+    // 配置变化也需应用覆盖规则
+    setBanner();
 })
 
 ipcRenderer.on('ClassCountdown', (e, arg) => {
-  isClassCountdown = arg
-  tick(true)
+    isClassCountdown = arg
+    tick(true)
 })
 
 ipcRenderer.on('ClassHidden', (e, arg) => {
-  isClassHidden = arg
-  tick(true)
+    isClassHidden = arg
+    tick(true)
 })
 
 ipcRenderer.on('setDayOffset', () => {
-  ipcRenderer.send('dialog', {
-    reply: 'getDayOffset',
-    options: {
-      title: '切换日程',
-      message: `将今日使用课表日程设置为本周的星期几：`,
-      buttons: ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '重置至当前日期'],
-      cancelId: -1,
-    }
-  })
+    ipcRenderer.send('dialog', {
+        reply: 'getDayOffset',
+        options: {
+            title: '切换日程',
+            message: `将今日使用课表日程设置为本周的星期几：`,
+            buttons: ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '重置至当前日期'],
+            cancelId: -1,
+        }
+    })
 })
 
 ipcRenderer.on('getDayOffset', (e, arg) => {
@@ -609,7 +609,7 @@ ipcRenderer.on('getDayOffset', (e, arg) => {
         dayOffset = arg.index
         // noinspection JSUndeclaredVariable
         setDayOffsetLastDay = new Date().getDay()
-    return
+        return
     }
     localStorage.setItem('dayOffset', '-1')
     localStorage.setItem('setDayOffsetLastDay', '-1')
@@ -618,82 +618,82 @@ ipcRenderer.on('getDayOffset', (e, arg) => {
 })
 
 ipcRenderer.on('setWeather', (e, arg) => {
-  applyTemperature(arg)
+    applyTemperature(arg)
 
-  const useBrief = !!scheduleConfig.weather_alert_brief;
-  const candidate = pickWeatherWarn(arg, useBrief)
+    const useBrief = !!scheduleConfig.weather_alert_brief;
+    const candidate = pickWeatherWarn(arg, useBrief)
 
-  const ts = Date.now();
-  if (ts >= weatherWarnTs) {
-    weatherWarnTs = ts;
-    weatherWarn = candidate;
-    console.log('[Weather] ts=', ts, 'briefMode=', useBrief, 'warn=', weatherWarn, 'override=', !!scheduleConfig.weather_alert_override);
-    setBanner();
-  } else {
-    console.log('[Weather] drop outdated ts=', ts, 'currentTs=', weatherWarnTs, 'candidate=', candidate);
-  }
+    const ts = Date.now();
+    if (ts >= weatherWarnTs) {
+        weatherWarnTs = ts;
+        weatherWarn = candidate;
+        console.log('[Weather] ts=', ts, 'briefMode=', useBrief, 'warn=', weatherWarn, 'override=', !!scheduleConfig.weather_alert_override);
+        setBanner();
+    } else {
+        console.log('[Weather] drop outdated ts=', ts, 'currentTs=', weatherWarnTs, 'candidate=', candidate);
+    }
 })
 
 ipcRenderer.on('updateWeather', () => {
-  ipcRenderer.send('getWeather', false)
+    ipcRenderer.send('getWeather', false)
 })
 
 ipcRenderer.on('broadcastSyncConfig', () => {
-  ipcRenderer.send('RequestSyncConfig', false)
+    ipcRenderer.send('RequestSyncConfig', false)
 })
 
 // 辅助：确保 banner 高度可见
 function ensureBannerHeight(){
-  if (!root) return; // 未初始化时跳过
-  const configuredBannerH = scheduleConfig?.css_style?.['--banner-height'];
-  const currentH = getComputedStyle(document.documentElement).getPropertyValue('--banner-height').trim();
-  const desiredH = (configuredBannerH || defaultBannerHeight || '32px');
-  if (!currentH || currentH === '0' || currentH === '0px') {
-    root.style.setProperty('--banner-height', desiredH);
-  }
+    if (!root) return; // 未初始化时跳过
+    const configuredBannerH = scheduleConfig?.css_style?.['--banner-height'];
+    const currentH = getComputedStyle(document.documentElement).getPropertyValue('--banner-height').trim();
+    const desiredH = (configuredBannerH || defaultBannerHeight || '32px');
+    if (!currentH || currentH === '0' || currentH === '0px') {
+        root.style.setProperty('--banner-height', desiredH);
+    }
 }
 
 function resetMarqueeTrack(){
-  if (!bannerText) return;
-  if (bannerText._track && bannerText.contains(bannerText._track)) {
-    bannerText.removeChild(bannerText._track);
-  }
-  bannerText._track = null;
+    if (!bannerText) return;
+    if (bannerText._track && bannerText.contains(bannerText._track)) {
+        bannerText.removeChild(bannerText._track);
+    }
+    bannerText._track = null;
 }
 
 function showBanner(text){
-  if (!banner || !bannerText) return;
-  banner.style.display = 'flex';
-  ensureBannerHeight();
-  resetMarqueeTrack();
-  if (typeof bannerText.stop === 'function') bannerText.stop();
-  if (typeof bannerText.start === 'function') bannerText.start();
-  console.log('[Banner] show override=', !!scheduleConfig.weather_alert_override, 'text=', text, 'height=', getComputedStyle(document.documentElement).getPropertyValue('--banner-height'));
+    if (!banner || !bannerText) return;
+    banner.style.display = 'flex';
+    ensureBannerHeight();
+    resetMarqueeTrack();
+    if (typeof bannerText.stop === 'function') bannerText.stop();
+    if (typeof bannerText.start === 'function') bannerText.start();
+    console.log('[Banner] show override=', !!scheduleConfig.weather_alert_override, 'text=', text, 'height=', getComputedStyle(document.documentElement).getPropertyValue('--banner-height'));
 }
 
 function hideBanner(){
-  if (!banner || !bannerText || !root) return;
-  banner.style.display = 'none';
-  if (typeof bannerText.stop === 'function') bannerText.stop();
-  root.style.setProperty('--banner-height', 0);
-  console.log('[Banner] hide override=', !!scheduleConfig.weather_alert_override, 'text empty');
+    if (!banner || !bannerText || !root) return;
+    banner.style.display = 'none';
+    if (typeof bannerText.stop === 'function') bannerText.stop();
+    root.style.setProperty('--banner-height', 0);
+    console.log('[Banner] hide override=', !!scheduleConfig.weather_alert_override, 'text empty');
 }
 
 // 统一控制 banner 文本与动画（天气预警覆盖）
 function setBanner() {
-  // DOM 未就绪则跳过，避免在初始化前触发动画 API
-  if (!bannerText || !banner || !root) return;
+    // DOM 未就绪则跳过，避免在初始化前触发动画 API
+    if (!bannerText || !banner || !root) return;
 
-  const override = !!scheduleConfig.weather_alert_override;
-  const text = override ? (weatherWarn || '') : (scheduleConfig.banner_text || '');
+    const override = !!scheduleConfig.weather_alert_override;
+    const text = override ? (weatherWarn || '') : (scheduleConfig.banner_text || '');
 
-  if (text && text !== bannerText.innerText) {
-    bannerText.innerText = text;
-  }
+    if (text && text !== bannerText.innerText) {
+        bannerText.innerText = text;
+    }
 
-  if (text) {
-    showBanner(text)
-  } else {
-    hideBanner()
-  }
+    if (text) {
+        showBanner(text)
+    } else {
+        hideBanner()
+    }
 }
