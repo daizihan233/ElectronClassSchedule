@@ -23,7 +23,7 @@
     "electron-store": "^8.1.0",
     "electron-updater": "^6.3.9",
     "node-gyp": "^10.0.1",
-    "unzip": "^0.1.11",
+    "fstream": "1.0.12",
     "windows-shortcuts": "^0.1.6",
     "ws": "^8.18.0"
   },
