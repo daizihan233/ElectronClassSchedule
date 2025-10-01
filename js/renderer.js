@@ -40,6 +40,35 @@ let lastScheduleData = {
     divider: [null, null]
 }
 
+// 解析 YYYY-MM-DD（或 YYYY-M-D）为本地时区日期（00:00），避免被当作 UTC 解析
+function parseCountdownTargetLocal(ymd) {
+    if (typeof ymd !== 'string') return null;
+    const s = ymd.trim();
+    const m = RegExp(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/).exec(s);
+    if (!m) return null;
+    const y = Number(m[1]);
+    const mo = Number(m[2]);
+    const d = Number(m[3]);
+    if (!y || !mo || !d) return null;
+    // 使用本地 Date 构造，时间为本地 00:00
+    return new Date(y, mo - 1, d);
+}
+
+// 获取本地当天零点
+function startOfLocalDay(dt) {
+    if (!(dt instanceof Date)) return null;
+    return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+}
+
+// 本地“天”为单位的日期差（b - a），对齐零点并对 DST 采用四舍五入以保证为整数天
+function dayDiffLocal(a, b) {
+    const a0 = startOfLocalDay(a);
+    const b0 = startOfLocalDay(b);
+    if (!a0 || !b0) return NaN;
+    const msPerDay = 24 * 60 * 60 * 1000;
+    return Math.round((b0 - a0) / msPerDay);
+}
+
 // 跑马灯 polyfill（延后初始化）：为 #bannerText 提供 start()/stop() 与滚动效果
 function initBannerMarquee() {
     const el = bannerText;
@@ -317,7 +346,15 @@ function setSidebar() {
         corunit.innerText = ""
     } else {
         rightSidebar.style.display = 'block'
-        countdownDays.innerText = Math.ceil(Math.abs(new Date(scheduleConfig.countdown_target) - date) / (1000 * 60 * 60 * 24)).toString()
+        // 使用本地零点对齐的天数差，避免 UTC 字符串解析导致的 8:00 偏移
+        const targetLocal = parseCountdownTargetLocal(scheduleConfig.countdown_target)
+        if (targetLocal) {
+            const days = Math.abs(dayDiffLocal(date, targetLocal))
+            countdownDays.innerText = String(days)
+        } else {
+            // 回退行为：无法解析则显示 '-'，避免误导
+            countdownDays.innerText = '-'
+        }
     }
     leftSidebar.style.display = scheduleConfig.week_display ? 'block' : 'none'
     ipcRenderer.send('getWeather', false)
