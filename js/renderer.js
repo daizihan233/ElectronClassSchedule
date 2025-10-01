@@ -498,14 +498,14 @@ ipcRenderer.on('setCloudSec', (e, arg) => {
 // 小函数：温度与天气状态更新
 function applyTemperature(arg){
   if (!temperature || !weather) return; // DOM 未就绪时跳过，避免警告
-  const t = Number(arg?.temp)
+  const t = Number(arg['temp'])
   temperature.innerText = (isNaN(t) ? '-' : t) + "℃"
   if (!isNaN(t)){
     if (t < 24) temperature.style.color = "#66CCFF"
     else if (t <= 26) temperature.style.color = "#5FBC21"
     else temperature.style.color = "#EE0000"
   }
-  weather.innerText = String(arg?.weat ?? '')
+  weather.innerText = String(arg['weat'] ?? '')
 }
 
 // 辅助：标准化字符串
@@ -523,7 +523,7 @@ function looksWarnKey(key, useBrief){
 // 小函数：选择天气预警文本
 function pickWeatherWarn(data, useBrief){
   if (!data) return ''
-  const direct = normalizeStr(useBrief ? data.brief_warn : '') || normalizeStr(data.warn)
+  const direct = normalizeStr(useBrief ? data['brief_warn'] : '') || normalizeStr(data.warn)
   if (direct) return direct
   let best = ''
   for (const [k, v] of Object.entries(data)){
@@ -569,18 +569,20 @@ ipcRenderer.on('setDayOffset', () => {
 })
 
 ipcRenderer.on('getDayOffset', (e, arg) => {
-  if (arg.index === -1) return
-  if (arg.index <= 6) {
-    localStorage.setItem('dayOffset', arg.index.toString())
-    localStorage.setItem('setDayOffsetLastDay', new Date().getDay().toString())
-    dayOffset = arg.index
-    setDayOffsetLastDay = new Date().getDay()
+    if (arg.index === -1) return
+    if (arg.index <= 6) {
+        localStorage.setItem('dayOffset', arg.index.toString())
+        localStorage.setItem('setDayOffsetLastDay', new Date().getDay().toString())
+        // noinspection JSUndeclaredVariable
+        dayOffset = arg.index
+        // noinspection JSUndeclaredVariable
+        setDayOffsetLastDay = new Date().getDay()
     return
-  }
-  localStorage.setItem('dayOffset', '-1')
-  localStorage.setItem('setDayOffsetLastDay', '-1')
-  dayOffset = -1
-  setDayOffsetLastDay = -1
+    }
+    localStorage.setItem('dayOffset', '-1')
+    localStorage.setItem('setDayOffsetLastDay', '-1')
+    dayOffset = -1
+    setDayOffsetLastDay = -1
 })
 
 ipcRenderer.on('setWeather', (e, arg) => {
