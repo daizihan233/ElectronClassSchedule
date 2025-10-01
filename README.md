@@ -36,8 +36,8 @@ _**本篇 README 从 [原项目](https://github.com/EnderWolf006/ElectronClassSc
 4. 使用 Git 克隆本仓库代码：在终端中执行 `git clone https://github.com/daizihan233/ElectronClassSchedule.git`。
 5. 在本项目根目录中打开终端并执行 `pip install setuptools`。
 6. 在本项目根目录中打开终端并执行 `npm install`。
-8. 在本项目根目录中打开终端并执行 `npm run rebuild`。
-9. 在本项目根目录中打开终端并执行 `npm run build`。
+7. 在本项目根目录中打开终端并执行 `npm run rebuild`。
+8. 在本项目根目录中打开终端并执行 `npm run build`。
 
 - 执行上述环境及命令后，将在根目录生成一个 `out` 文件夹，其中包含您本地打包好的软件文件。
 - 然后您可以修改软件代码，使用 `npm start` 调试，使用 `npm run build` 打包。
