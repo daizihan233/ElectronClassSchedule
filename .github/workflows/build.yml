@@ -35,10 +35,11 @@ jobs:
       - name: Compute rolling version and write to package.json
         shell: pwsh
         run: |
-          $ym  = Get-Date -Format "yyyyMM"
-          $dd  = Get-Date -Format "dd"
-          # 语义化版本：YYYYMM.DD.N
-          $ver = "$ym.$dd.${{ github.run_number }}"
+          # 语义化版本：YYYYMM.D.N（均为数字且无前导零）
+          $ym  = [int](Get-Date -Format 'yyyyMM')
+          $dd  = [int](Get-Date -Format 'dd')
+          $run = [int]${{ github.run_number }}
+          $ver = "$ym.$dd.$run"
           Write-Host "Rolling version: $ver"
           $pkgPath = "package.json"
           $pkg = Get-Content $pkgPath -Raw | ConvertFrom-Json
