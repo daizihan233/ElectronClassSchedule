@@ -1,6 +1,6 @@
 {
   "name": "electron_class_schedule",
-  "version": "20250927",
+  "version": "202510.01.1",
   "description": "classSchedule",
   "main": "main.js",
   "author": "KuoHu",
@@ -18,7 +18,6 @@
     "electron-builder": "^24.13.3"
   },
   "dependencies": {
-    "dayjs": "^1.11.13",
     "electron-disable-minimize": "^2.1.0",
     "electron-prompt": "^1.7.0",
     "electron-store": "^8.1.0",
@@ -33,7 +32,7 @@
     "productName": "电子课表",
     "asar": true,
     "directories": {
-      "buildResources": "image"
+      "buildResources": "build-resources"
     },
     "files": [
       "**/*",
