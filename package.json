@@ -9,7 +9,8 @@
     "debug": "chcp 65001 && electron . --enable-logging",
     "rebuild": "electron-rebuild",
     "build": "electron-builder --win --x64",
-    "dist": "electron-builder --win --x64"
+    "dist": "electron-builder --win --x64",
+    "postinstall": "electron-builder install-app-deps"
   },
   "devDependencies": {
     "@electron/rebuild": "^3.6.0",
@@ -20,7 +21,6 @@
     "dayjs": "^1.11.13",
     "electron-disable-minimize": "^2.1.0",
     "electron-prompt": "^1.7.0",
-    "electron-squirrel-startup": "^1.0.1",
     "electron-store": "^8.1.0",
     "electron-updater": "^6.3.9",
     "node-gyp": "^10.0.1",
@@ -48,7 +48,6 @@
           "arch": ["x64"]
         }
       ],
-      "icon": "image/icon.png",
       "publisherName": "KuoHu"
     },
     "nsis": {
