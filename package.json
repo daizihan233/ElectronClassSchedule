@@ -1,6 +1,6 @@
 {
   "name": "electron_class_schedule",
-  "version": "202510.01.0",
+  "version": "2147483647.0.0",
   "description": "classSchedule",
   "main": "main.js",
   "author": "KuoHu",
@@ -37,6 +37,7 @@
     "files": [
       "**/*",
       "!out/**",
+      "!dist/**",
       "!**/*.map",
       "!**/*.log"
     ],
@@ -50,10 +51,10 @@
       "publisherName": "KuoHu"
     },
     "nsis": {
-      "oneClick": true,
+      "oneClick": false,
       "perMachine": false,
       "allowElevation": true,
-      "allowToChangeInstallationDirectory": false,
+      "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "电子课表",
