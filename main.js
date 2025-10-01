@@ -13,7 +13,8 @@ let tray;
 let form;
 let win;
 let template = []
-let basePath = app.isPackaged ? './resources/app/' : './'
+// 统一资源路径解析，兼容 asar
+const asset = (...p) => path.join(__dirname, ...p)
 let agreement = "https";
 let agreementWs = "wss";
 if (!store.get("isSecureConnection", true)) {
@@ -219,7 +220,7 @@ app.whenReady().then(() => {
 })
 
 ipcMain.on('getWeekIndex', (e, arg) => {
-    tray = new Tray(basePath + 'image/icon.png')
+    tray = new Tray(asset('image', 'icon.png'))
     template = [
         {
             label: '连接云端',
@@ -230,7 +231,7 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             }
         },
         {
-            icon: basePath + 'image/toggle.png',
+            icon: asset('image', 'toggle.png'),
             label: '更新源(可选)',
             click: () => {
                 const current = store.get('updateBaseUrl', '') || ''
@@ -242,7 +243,7 @@ ipcMain.on('getWeekIndex', (e, arg) => {
                     type: 'input',
                     height: 220,
                     width: 520,
-                    icon: basePath + 'image/toggle.png',
+                    icon: asset('image', 'toggle.png'),
                 }).then((r) => {
                     if (r === null) {
                         console.log('[Updater] Mirror cancelled')
@@ -274,7 +275,7 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             }
         },
         {
-            icon: basePath + 'image/toggle.png',
+            icon: asset('image', 'toggle.png'),
             label: '云端服务',
             click: () => {
                 win.webContents.send('fromCloud')
@@ -290,21 +291,21 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             }
         },
         {
-            icon: basePath + 'image/toggle.png',
+            icon: asset('image', 'toggle.png'),
             label: '所在班级',
             click: () => {
                 win.webContents.send('setClass')
             }
         },
         {
-            icon: basePath + 'image/toggle.png',
+            icon: asset('image', 'toggle.png'),
             label: '刷新天气',
             click: () => {
                 win.webContents.send('updateWeather')
             }
         },
         {
-            icon: basePath + 'image/toggle.png',
+            icon: asset('image', 'toggle.png'),
             label: '当前地区',
             click: () => {
                 prompt({
@@ -317,7 +318,7 @@ ipcMain.on('getWeekIndex', (e, arg) => {
                     type: 'input',
                     height: 180,
                     width: 400,
-                    icon: basePath + 'image/toggle.png',
+                    icon: asset('image', 'toggle.png'),
                 }).then((r) => {
                     if (r === null) {
                         console.log('[Local] User cancelled');
@@ -329,7 +330,7 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             }
         },
         {
-            icon: basePath + 'image/toggle.png',
+            icon: asset('image', 'toggle.png'),
             label: '更新课表',
             click: () => {
                 win.webContents.send('broadcastSyncConfig')
@@ -339,28 +340,28 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             type: 'separator'
         },
         {
-            icon: basePath + 'image/setting.png',
+            icon: asset('image', 'setting.png'),
             label: '配置课表',
             click: () => {
                 win.webContents.send('openSettingDialog')
             }
         },
         {
-            icon: basePath + 'image/clock.png',
+            icon: asset('image', 'clock.png'),
             label: '矫正计时',
             click: () => {
                 win.webContents.send('getTimeOffset')
             }
         },
         {
-            icon: basePath + 'image/toggle.png',
+            icon: asset('image', 'toggle.png'),
             label: '切换日程',
             click: () => {
                 win.webContents.send('setDayOffset')
             }
         },
         {
-            icon: basePath + 'image/github.png',
+            icon: asset('image', 'github.png'),
             label: '源码仓库',
             click: () => {
                 shell.openExternal('https://github.com/daizihan233/ElectronClassSchedule');
@@ -413,7 +414,7 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             type: 'separator'
         },
         {
-            icon: basePath + 'image/quit.png',
+            icon: asset('image', 'quit.png'),
             label: '退出程序',
             click: () => {
                 dialog.showMessageBox(win, {
@@ -505,7 +506,7 @@ ipcMain.on('RequestSyncConfig', () => {
         type: 'input',
         height: 180,
         width: 400,
-        icon: basePath + 'image/toggle.png',
+        icon: asset('image', 'toggle.png'),
     }).then((r) => {
         if (r === null) return;
         const { net } = require('electron')
@@ -513,7 +514,7 @@ ipcMain.on('RequestSyncConfig', () => {
             method: 'POST',
             url: `${agreement}://${server}/api/broadcast/${classId}`,
             headers: {
-                "Authorization": `Basic ${Buffer.from(`ElectronClassSchedule:${r.toString()}`).toString('base64')}`,
+                "Authorization": 'Basic ' + Buffer.from('ElectronClassSchedule:' + String(r)).toString('base64'),
             }
         })
         try {
@@ -548,7 +549,7 @@ ipcMain.on('getTimeOffset', (e, arg) => {
         type: 'input',
         height: 180,
         width: 400,
-        icon: basePath + 'image/clock.png',
+        icon: asset('image', 'clock.png'),
     }).then((r) => {
         if (r === null) {
             console.log('[getTimeOffset] User cancelled');
@@ -569,7 +570,7 @@ ipcMain.on('fromCloud', (e, arg) => {
         type: 'input',
         height: 180,
         width: 400,
-        icon: basePath + 'image/toggle.png',
+        icon: asset('image', 'toggle.png'),
     }).then((r) => {
         if (r === null) {
             console.log('[Cloud] User cancelled');
