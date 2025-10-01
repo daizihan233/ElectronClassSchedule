@@ -1,5 +1,5 @@
 const electron = require('electron');
-const { app, BrowserWindow, Menu, ipcMain, dialog, screen, Tray, shell} = electron
+const { app, BrowserWindow, Menu, ipcMain, dialog, screen, Tray, shell } = electron
 const path = require('path');
 const fs = require('fs')
 const os = require('os')
@@ -15,67 +15,120 @@ let win;
 let template = []
 // 统一资源路径解析，兼容 asar
 const asset = (...p) => path.join(__dirname, ...p)
-let agreement = "https";
-let agreementWs = "wss";
-if (!store.get("isSecureConnection", true)) {
-    agreement = "http";
-    agreementWs = "ws";
+
+// 使用函数动态获取协议与服务器，避免缓存导致不一致
+function getProtocols() {
+    const secure = store.get('isSecureConnection', true)
+    return { agreement: secure ? 'https' : 'http', agreementWs: secure ? 'wss' : 'ws' }
 }
-let server = String(store.get("server", "class.khbit.cn"))
+function getServer() {
+    return String(store.get('server', 'class.khbit.cn'))
+}
 let classId = String(store.get("class", "39/2023/1"))
-console.log('Class:', classId, 'Server:', server, 'Secure:', store.get("isSecureConnection", true));
+console.log('Class:', classId, 'Server:', getServer(), 'Secure:', store.get("isSecureConnection", true));
+
 const WebSocket = require('ws');
 let ws;
+let heartbeatTimer = null;
+let reconnectTimer = null;
+
+function clearHeartbeat() {
+    if (heartbeatTimer) {
+        clearInterval(heartbeatTimer)
+        heartbeatTimer = null
+    }
+}
+function scheduleReconnect(delayMs = 5000) {
+    if (reconnectTimer) {
+        clearTimeout(reconnectTimer)
+        reconnectTimer = null
+    }
+    reconnectTimer = setTimeout(() => {
+        reconnectTimer = null
+        connect()
+    }, delayMs)
+}
 function connect(rejectUnauthorized = true) {
     let errorFlag = false;
-    ws = new WebSocket.WebSocket(
-        `${agreementWs}://${server}/ws/${classId}`,
-        [], {
-            rejectUnauthorized: rejectUnauthorized
-        }
-    );
+    const { agreementWs } = getProtocols()
+    const server = getServer()
+    const url = `${agreementWs}://${server}/ws/${classId}`
+
+    try {
+        // 关闭旧连接与心跳
+        try { ws?.removeAllListeners() } catch {}
+        try { ws?.close() } catch {}
+        clearHeartbeat()
+
+        ws = new WebSocket(url, [], { rejectUnauthorized })
+    } catch (err) {
+        console.error('WebSocket create error:', err)
+        scheduleReconnect()
+        return
+    }
+
     ws.on('open', () => {
-        console.log('Connected to server');
-        setInterval(() => {
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.ping(); // 发送心跳消息
-                console.log('Heartbeat sent');
+        console.log('Connected to server')
+        clearHeartbeat()
+        heartbeatTimer = setInterval(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                try { ws.ping() } catch (e) { console.log('Heartbeat ping failed:', e?.message || e) }
+                console.log('Heartbeat sent')
             } else {
-                console.log('Disconnected from server, No heartbeat sent');
+                console.log('Disconnected from server, No heartbeat sent')
             }
-        }, 25000); // 每 25 秒发送一次心跳
-    });
+        }, 25000)
+    })
 
     // 处理接收到的消息
     ws.on('message', (message) => {
-        console.log('Received from server:', message.toString());
-        if (message.toString() === "SyncConfig") {
-            console.log('SyncConfig');
-            getScheduleFromCloud();
+        const text = message?.toString?.() ?? ''
+        console.log('Received from server:', text)
+        if (text === 'SyncConfig') {
+            console.log('SyncConfig')
+            getScheduleFromCloud()
         }
-    });
+    })
 
     // 处理连接关闭
     ws.on('close', () => {
-        console.log('Disconnected from server');
-        if (!errorFlag || !rejectUnauthorized)
-            setTimeout(connect, 5000); // 重连
-    });
+        console.log('Disconnected from server')
+        clearHeartbeat()
+        // 与原逻辑一致：若非 error 触发，或当前为不验证证书的连接，均进行重连
+        if (!errorFlag || !rejectUnauthorized) {
+            scheduleReconnect()
+        }
+    })
 
     // 处理错误
     ws.on('error', (error) => {
         errorFlag = true;
-        console.error('WebSocket error:', error, ", try to connect without verifying the certificate");
-        if (rejectUnauthorized)
-            connect(false); // 尝试连接不验证证书
-    });
+        console.error('WebSocket error:', error, ', try to connect without verifying the certificate')
+        clearHeartbeat()
+        if (rejectUnauthorized) {
+            // 尝试连接不验证证书
+            scheduleReconnect(0)
+            connect(false)
+        }
+    })
 }
 connect();
-// 防止多开w
-if (!app.requestSingleInstanceLock({ key: 'classSchedule' })) {
+
+// 防止多开
+const gotTheLock = app.requestSingleInstanceLock({ key: 'classSchedule' })
+if (!gotTheLock) {
     app.quit();
 }
-app.commandLine.appendSwitch("--disable-http-cache");
+app.on('second-instance', () => {
+    if (win) {
+        if (win.isMinimized()) win.restore()
+        win.focus()
+    }
+})
+
+// 正确禁用缓存的开关名
+app.commandLine.appendSwitch('disable-http-cache');
+
 const createWindow = () => {
     // noinspection JSCheckFunctionSignatures
     win = new BrowserWindow({
@@ -127,6 +180,7 @@ function isSemver(v) {
 }
 
 // 自动更新设置（仅打包且版本为 semver 时生效）
+let updaterInitialized = false
 function setupAutoUpdater() {
     try {
         if (!app.isPackaged) return;
@@ -135,6 +189,7 @@ function setupAutoUpdater() {
             console.warn('[Updater] disabled due to non-semver version:', v)
             return;
         }
+        if (updaterInitialized) return
         const { autoUpdater } = require('electron-updater')
         // 默认镜像地址（latest.yml 与安装包所在目录）- 适配 GitHub 最新发布路径
         const defaultMirror = 'https://hubproxy.khbit.cn/https://github.com/daizihan233/ElectronClassSchedule/releases/latest/download'
@@ -173,6 +228,7 @@ function setupAutoUpdater() {
         // 仅启动时检查一次
         const check = () => autoUpdater.checkForUpdates().catch(() => {})
         setTimeout(check, 3000)
+        updaterInitialized = true
     } catch (e) {
         console.error('[Updater] setup failed', e)
     }
@@ -180,19 +236,28 @@ function setupAutoUpdater() {
 
 function getScheduleFromCloud() {
     const { net } = require('electron')
-    const url = `${agreement}://${server}/${classId}`
+    const { agreement } = getProtocols()
+    const url = `${agreement}://${getServer()}/${classId}`
     // noinspection JSCheckFunctionSignatures
     const request = net.request(url)
-    let scheduleConfigSync;
+    let raw = ''
     request.on('response', (response) => {
         response.on('data', (chunk) => {
-            scheduleConfigSync = JSON.parse(chunk.toString())
-            console.log(scheduleConfigSync)
+            raw += chunk.toString()
         })
         response.on('end', () => {
+            try {
+                const scheduleConfigSync = JSON.parse(raw)
+                console.log(scheduleConfigSync)
+                if (win && !win.isDestroyed()) win.webContents.send('newConfig', scheduleConfigSync)
+            } catch (err) {
+                console.error('getScheduleFromCloud JSON parse error:', err)
+            }
             console.log('No more data in response.')
-            win.webContents.send("newConfig", scheduleConfigSync)
         })
+    })
+    request.on('error', (err) => {
+        console.error('getScheduleFromCloud request error:', err)
     })
     request.end()
 }
@@ -206,16 +271,15 @@ app.whenReady().then(() => {
             setTimeout(getScheduleFromCloud, 5000)
         }
     })
-    electron.powerMonitor.on("suspend", (e) => {
-        e.preventDefault()
+    // powerMonitor 事件无 preventDefault
+    electron.powerMonitor.on('suspend', () => {
         app.quit()
     })
-    electron.powerMonitor.on("shutdown", (e) => {
-        e.preventDefault()
+    electron.powerMonitor.on('shutdown', () => {
         app.quit()
     })
     const handle = win.getNativeWindowHandle();
-    DisableMinimize(handle); // Thank to peter's project https://github.com/tbvjaos510/electron-disable-minimize
+    try { DisableMinimize(handle) } catch (e) { console.warn('DisableMinimize failed:', e?.message || e) }
     setAutoLaunch()
 })
 
@@ -323,7 +387,7 @@ ipcMain.on('getWeekIndex', (e, arg) => {
                     if (r === null) {
                         console.log('[Local] User cancelled');
                     } else {
-                        store.set("local", r.toString())
+                        store.set('local', r.toString())
                         console.log('[Local] ', r.toString());
                     }
                 })
@@ -427,7 +491,7 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             }
         }
     ]
-    template[arg].checked = true
+    template[arg]?.checked !== undefined && (template[arg].checked = true)
     form = Menu.buildFromTemplate(template)
     tray.setToolTip('电子课表 - by KuoHu')
     function trayClicked() {
@@ -464,35 +528,35 @@ ipcMain.on('pop', () => {
 // 补回：天气获取
 ipcMain.on('getWeather', () => {
     const { net } = require('electron')
+    const { agreement } = getProtocols()
     const request = net.request(
-        `${agreement}://${server}/api/weather/${store.get('local', "Nanjing/Gulou")}`
+        `${agreement}://${getServer()}/api/weather/${store.get('local', "Nanjing/Gulou")}`
     )
-    let weatherData;
-    let flag = true;
-    try {
-        request.on('response', (response) => {
-            response.on('data', (chunk) => {
-                try {
-                    weatherData = JSON.parse(chunk.toString())
-                } catch (e) {
-                    console.error(e)
-                }
-            })
-            response.on('end', () => {
-                if (flag) win.webContents.send('setWeather', weatherData)
-                else {
-                    console.log("Can't get weather data, try again later")
-                    setTimeout(() => win.webContents.send('updateWeather'), 5000)
-                }
-            })
-            response.on('error', (error) => {
-                console.error(error, "Weather API error, retry later")
-                setTimeout(() => win.webContents.send('updateWeather'), 5000)
-            })
+    let raw = ''
+    request.on('response', (response) => {
+        const status = response.statusCode || 0
+        response.on('data', (chunk) => {
+            raw += chunk.toString()
         })
-    } catch (e) {
-        console.log(e)
-    }
+        response.on('end', () => {
+            if (status >= 200 && status < 300) {
+                try {
+                    const weatherData = JSON.parse(raw)
+                    if (win && !win.isDestroyed()) win.webContents.send('setWeather', weatherData)
+                } catch (e) {
+                    console.error('Weather JSON parse error:', e)
+                    setTimeout(() => win?.webContents?.send('updateWeather'), 5000)
+                }
+            } else {
+                console.log(`Weather API non-2xx: ${status}, retry later`)
+                setTimeout(() => win?.webContents?.send('updateWeather'), 5000)
+            }
+        })
+    })
+    request.on('error', (error) => {
+        console.error('Weather API error:', error, 'retry later')
+        setTimeout(() => win?.webContents?.send('updateWeather'), 5000)
+    })
     request.end()
 })
 
@@ -510,9 +574,10 @@ ipcMain.on('RequestSyncConfig', () => {
     }).then((r) => {
         if (r === null) return;
         const { net } = require('electron')
+        const { agreement } = getProtocols()
         const request = net.request({
             method: 'POST',
-            url: `${agreement}://${server}/api/broadcast/${classId}`,
+            url: `${agreement}://${getServer()}/api/broadcast/${classId}`,
             headers: {
                 "Authorization": 'Basic ' + Buffer.from('ElectronClassSchedule:' + String(r)).toString('base64'),
             }
@@ -534,6 +599,7 @@ ipcMain.on('RequestSyncConfig', () => {
         } catch (e) {
             console.log(e)
         }
+        request.on('error', (err) => console.error('Broadcast request error:', err))
         request.end()
     })
 })
@@ -542,7 +608,7 @@ ipcMain.on('getTimeOffset', (e, arg) => {
     prompt({
         title: '计时矫正',
         label: '请设置课表计时与系统时间的偏移秒数:',
-        value: arg.toString(),
+        value: String(arg ?? 0),
         inputAttrs: {
             type: 'number'
         },
@@ -563,7 +629,7 @@ ipcMain.on('fromCloud', (e, arg) => {
     prompt({
         title: '云端服务',
         label: '请设置云端服务：',
-        value: arg.toString(),
+        value: String(arg ?? store.get('server', 'class.khbit.cn')),
         inputAttrs: {
             type: 'string'
         },
@@ -576,7 +642,7 @@ ipcMain.on('fromCloud', (e, arg) => {
             console.log('[Cloud] User cancelled');
         } else {
             win.webContents.send('setCloudUrl', r.toString())
-            store.set("server", r.toString())
+            store.set('server', r.toString())
             console.log('[Cloud] ', r.toString());
         }
     })
