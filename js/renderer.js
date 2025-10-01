@@ -134,7 +134,7 @@ function initBannerMarquee() {
             offsetX += textWidth; // 右侧无缝再入
         }
         el._track.style.transform = `translateX(${offsetX}px)`;
-        rafId = window.requestAnimationFrame(loop);
+        rafId = globalThis.requestAnimationFrame(loop);
     }
 
     function start() {
@@ -145,12 +145,12 @@ function initBannerMarquee() {
         if (rafId) return;
         el.classList.remove('paused');
         lastTs = 0;
-        rafId = window.requestAnimationFrame(loop);
+        rafId = globalThis.requestAnimationFrame(loop);
     }
 
     function stop() {
         if (rafId) {
-            window.cancelAnimationFrame(rafId);
+            globalThis.cancelAnimationFrame(rafId);
             rafId = null;
         }
         el.classList.add('paused');
@@ -180,9 +180,13 @@ function initBannerMarquee() {
         buildStructure(text);
         if (playing) start();
     };
-    window.addEventListener('resize', onResize);
+    globalThis.addEventListener('resize', onResize);
     el._disposeMarquee = () => {
-        try { window.removeEventListener('resize', onResize); } catch (e) { console.debug('[Marquee] removeEventListener failed:', e); }
+        try {
+            globalThis.removeEventListener('resize', onResize);
+        } catch (e) {
+            console.debug('[Marquee] removeEventListener failed:', e);
+        }
         try { if (observer) observer.disconnect(); } catch (e) { console.debug('[Marquee] observer.disconnect failed:', e); }
         try { stop(); } catch (e) { console.debug('[Marquee] stop failed:', e); }
     }
@@ -386,13 +390,13 @@ function initDomAndStart() {
     }
 
     // 鼠标在窗口内移动：仅此时降低透明度
-    window.addEventListener('mousemove', () => setDimmed(true));
+    globalThis.addEventListener('mousemove', () => setDimmed(true));
 
     // 当鼠标离开窗口或页面失焦时，恢复正常透明度
-    window.addEventListener('mouseout', () => {
+    globalThis.addEventListener('mouseout', () => {
         setDimmed(false);
     });
-    window.addEventListener('blur', () => setDimmed(false));
+    globalThis.addEventListener('blur', () => setDimmed(false));
     document.addEventListener('mouseleave', () => setDimmed(false));
     document.addEventListener('pointerleave', () => setDimmed(false));
 
@@ -423,7 +427,12 @@ function initDomAndStart() {
         } catch {}
     }
     hoverTimer = setInterval(pollHover, 100)
-    window.addEventListener('beforeunload', () => { try { clearInterval(hoverTimer) } catch {} })
+    globalThis.addEventListener('beforeunload', () => {
+        try {
+            clearInterval(hoverTimer)
+        } catch {
+        }
+    })
 
     // 尝试应用一次 banner，以处理初始化前产生的更新
     setBanner();
@@ -432,7 +441,7 @@ function initDomAndStart() {
     scheduleNextTick();
 }
 
-window.addEventListener('DOMContentLoaded', initDomAndStart)
+globalThis.addEventListener('DOMContentLoaded', initDomAndStart)
 
 function setScheduleDialog() {
     ipcRenderer.send('dialog', {
