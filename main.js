@@ -215,9 +215,12 @@ function setupAutoUpdater() {
             const percent = Math.floor(p.percent || 0)
             tray?.setToolTip(`电子课表 - 更新下载中 ${percent}%`)
         })
-        autoUpdater.on('update-downloaded', () => {
-            // 静默安装：无需提示，立即重启安装
-            try { console.log('[Updater] update-downloaded -> quitAndInstall') } catch {}
+        autoUpdater.on('update-downloaded', (info) => {
+            tray?.setToolTip(`电子课表 - 更新可用`)
+            try {
+                console.log('[Updater] update-downloaded -> quitAndInstall', info?.version || '')
+            } catch {
+            }
             autoUpdater.quitAndInstall()
         })
         // 仅启动时检查一次

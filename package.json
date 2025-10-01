@@ -1,6 +1,6 @@
 {
   "name": "electron_class_schedule",
-  "version": "2147483647.0.0",
+  "version": "0.0.0",
   "description": "classSchedule",
   "main": "main.js",
   "author": "KuoHu",
@@ -47,8 +47,7 @@
           "target": "nsis",
           "arch": ["x64"]
         }
-      ],
-      "publisherName": "KuoHu"
+      ]
     },
     "nsis": {
       "oneClick": false,
