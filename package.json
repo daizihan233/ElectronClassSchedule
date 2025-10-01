@@ -1,6 +1,6 @@
 {
   "name": "electron_class_schedule",
-  "version": "20250920",
+  "version": "20250927",
   "description": "classSchedule",
   "main": "main.js",
   "author": "KuoHu",
@@ -10,7 +10,7 @@
     "start": "electron-forge start",
     "rebuild": "electron-rebuild",
     "build": "node build.js",
-    "buildNew": "electron-packager . classSchedule --platform=win32 --arch=x64 --out=./out --app-version=0.0.1 --overwrite",
+    "buildNew": "electron-packager . classSchedule --platform=win32 --arch=x64 --out=./out --app-version=0.0.1 --overwrite --ignore",
     "package": "electron-forge package",
     "make": "electron-forge make"
   },
@@ -25,10 +25,10 @@
     "@electron/fuses": "^1.8.0",
     "@electron/rebuild": "^3.6.0",
     "electron": "^22.3.27",
-    "electron-packager": "^17.1.2"
+    "electron-packager": "^17.1.2",
+    "dayjs": "^1.11.13"
   },
   "dependencies": {
-    "dayjs": "^1.11.13",
     "electron-disable-minimize": "^2.1.0",
     "electron-prompt": "^1.7.0",
     "electron-squirrel-startup": "^1.0.1",
