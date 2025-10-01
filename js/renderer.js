@@ -21,6 +21,8 @@ let banner;
 let weatherWarn = ''
 // 天气预警更新时间戳（ms）
 let weatherWarnTs = 0
+// 最近一次天气原始数据（用于在配置切换简略/详细时立即重算）
+let lastWeatherPayload = null
 // 默认横幅高度（用于从 0 恢复）
 let defaultBannerHeight = null
 let root = null;
@@ -614,6 +616,15 @@ function pickWeatherWarn(data, useBrief){
     return best
 }
 
+// 根据最近一次天气数据与当前配置，立即重算并应用预警文本（不等待下一次天气推送）
+function recomputeWeatherWarnFromLast() {
+    if (!lastWeatherPayload) return false;
+    const useBrief = !!scheduleConfig.weather_alert_brief;
+    weatherWarn = pickWeatherWarn(lastWeatherPayload, useBrief);
+    weatherWarnTs = Date.now();
+    return true;
+}
+
 ipcRenderer.on('newConfig', (e, arg) => {
     scheduleConfig = arg
     for (const key in scheduleConfig.css_style) {
@@ -623,6 +634,16 @@ ipcRenderer.on('newConfig', (e, arg) => {
     setScheduleClass()
     setSidebar()
     // 配置变化也需应用覆盖规则
+    // 若开启预警覆盖并切换了简略/详细模式，立即基于最近一次天气数据重算，避免等待下一次天气刷新
+    if (scheduleConfig.weather_alert_override) {
+        const ok = recomputeWeatherWarnFromLast();
+        if (!ok) {
+            try {
+                ipcRenderer.send('getWeather', false)
+            } catch {
+            }
+        }
+    }
     setBanner();
 })
 
@@ -670,6 +691,9 @@ ipcRenderer.on('setWeather', (e, arg) => {
 
     const useBrief = !!scheduleConfig.weather_alert_brief;
     const candidate = pickWeatherWarn(arg, useBrief)
+
+    // 记录最近一次天气原始数据，供配置切换时立即重算
+    lastWeatherPayload = arg
 
     const ts = Date.now();
     if (ts >= weatherWarnTs) {
