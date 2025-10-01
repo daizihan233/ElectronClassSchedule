@@ -355,6 +355,8 @@ function setSidebar() {
             // 回退行为：无法解析则显示 '-'，避免误导
             countdownDays.innerText = '-'
         }
+        // 切回倒计时时恢复单位
+        corunit.innerText = '天'
     }
     leftSidebar.style.display = scheduleConfig.week_display ? 'block' : 'none'
     ipcRenderer.send('getWeather', false)
