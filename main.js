@@ -309,7 +309,7 @@ ipcMain.on('getWeekIndex', (e, arg) => {
                     } else {
                         store.set('updateBaseUrl', r.toString())
                         dialog.showMessageBox(win, {message: '更新源已保存，重启应用后生效。'}).then(doNothing)
-                     }
+                    }
                 })
             }
         },
