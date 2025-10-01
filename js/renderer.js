@@ -379,19 +379,51 @@ function initDomAndStart() {
     || '32px'
 
   // 鼠标移动监听（依赖 root）
-  let hideTimer
-  window.addEventListener("mousemove", event => {
-    const isOption = !!event?.target?.classList?.contains('notIgnoreClick')
-    if (!isOption) {
-      root.style.opacity = '0.1'
-      clearTimeout(hideTimer)
-    } else {
-      clearTimeout(hideTimer)
-      root.style.opacity = '1'
-    }
-    ipcRenderer.send('setIgnore', !isOption)
+  // 统一切换透明度（不再在此切换点击穿透）
+  function setDimmed(dim) {
+    if (!root) return;
+    root.style.opacity = dim ? '0.1' : '1';
+  }
+
+  // 鼠标在窗口内移动：仅此时降低透明度
+  window.addEventListener('mousemove', () => setDimmed(true));
+
+  // 当鼠标离开窗口或页面失焦时，恢复正常透明度
+  window.addEventListener('mouseout', (_) => {
+    setDimmed(false);
   });
+  window.addEventListener('blur', () => setDimmed(false));
+  document.addEventListener('mouseleave', () => setDimmed(false));
+  document.addEventListener('pointerleave', () => setDimmed(false));
+
+  // 初始设置：正常透明度 + 永远开启点击穿透
+  setDimmed(false)
   ipcRenderer.send('setIgnore', true)
+
+  // 使用主进程提供的鼠标位置 + 窗口边界做轮询悬停检测
+  let hoverTimer = null
+  let lastDimmed = null
+  const NEAR_PAD = 12 // 邻近像素容差
+  function isNear(cursor, bounds){
+    if (!cursor || !bounds) return false
+    const x1 = bounds.x - NEAR_PAD
+    const y1 = bounds.y - NEAR_PAD
+    const x2 = bounds.x + (bounds.width || 0) + NEAR_PAD
+    const y2 = bounds.y + (bounds.height || 0) + NEAR_PAD
+    return cursor.x >= x1 && cursor.x <= x2 && cursor.y >= y1 && cursor.y <= y2
+  }
+  async function pollHover(){
+    try {
+      const data = await ipcRenderer.invoke('getCursorAndBounds')
+      const near = isNear(data?.cursor, data?.bounds)
+      if (near !== lastDimmed){
+        setDimmed(!!near)
+        lastDimmed = !!near
+      }
+    } catch {}
+  }
+  hoverTimer = setInterval(pollHover, 100)
+  window.addEventListener('beforeunload', () => { try { clearInterval(hoverTimer) } catch {} })
 
   // 尝试应用一次 banner，以处理初始化前产生的更新
   setBanner();
