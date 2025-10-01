@@ -2,6 +2,8 @@
 
 ![view](image/README/view.png)
 
+[![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=daizihan233_ElectronClassSchedule)](https://sonarcloud.io/summary/new_code?id=daizihan233_ElectronClassSchedule)
+
 _**注意：此版本并非原版，请不要在 [原项目](https://github.com/EnderWolf006/ElectronClassSchedule) 的 Issue 提交本项目的问题，本项目较于原版代码的修改较多，故不会随时跟进原版的问题修复与新功能更新，如果原版功能存在问题而您正在使用此版本，烦请在此项目再开 issue**_
 
 _**本篇 README 从 [原项目](https://github.com/EnderWolf006/ElectronClassSchedule) 的 README 修改而来，修改时可能存在疏漏，如遇部署问题请联系本项目作者 `party-turret-royal@duck.com`**_
