@@ -84,19 +84,6 @@ function setCurrentHighlightExternal(currentHighlight, index, type, fullName, en
         if (isEnd) currentHighlight.isEnd = true;
     }
 
-function findUpcomingExternal(index, timeRange, timeRanges, dayTimetable, scheduleArray, currentSchedule, currentTime, currentHighlight) {
-        for (let i = index + 1; i < timeRanges.length; i++) {
-            const nextTimeRange = timeRanges[i];
-            const nextClassIndex = dayTimetable[nextTimeRange];
-            if (typeof nextClassIndex === 'number') {
-            setCurrentHighlightExternal(currentHighlight, scheduleArray.length, 'upcoming', dayTimetable[timeRange], timeRange.split('-')[1], currentTime);
-                return true;
-            }
-        }
-    setCurrentHighlightExternal(currentHighlight, currentSchedule.length - 1, 'upcoming', dayTimetable[timeRange], timeRange.split('-')[1], currentTime, true);
-        return false;
-    }
-
 function getScheduleData() {
     const currentSchedule = getCurrentDaySchedule();
     const currentTime = getCurrentTime();
@@ -108,6 +95,41 @@ function getScheduleData() {
     let currentHighlight = { index: null, type: null, fullName: null, countdown: null, countdownText: null };
 
     const timeRanges = Object.keys(dayTimetable);
+
+    const findUpcoming = (breakIndex, breakRange) => {
+        // 选择接下来最近的一节课作为 upcoming
+        for (let i = breakIndex + 1; i < timeRanges.length; i++) {
+            const nextTimeRange = timeRanges[i];
+            const nextClassIndex = dayTimetable[nextTimeRange];
+            if (typeof nextClassIndex === 'number') {
+                const short = currentSchedule[nextClassIndex];
+                const full = scheduleConfig.subject_name[short];
+                // scheduleArray.length 指向下一节在列表中的位置
+                setCurrentHighlightExternal(
+                    currentHighlight,
+                    scheduleArray.length,
+                    'upcoming',
+                    full,
+                    breakRange.split('-')[1],
+                    currentTime
+                );
+                return true;
+            }
+        }
+        // 没有后续课程，标记为结束
+        const lastShort = currentSchedule[currentSchedule.length - 1];
+        const lastFull = scheduleConfig.subject_name[lastShort] || '';
+        setCurrentHighlightExternal(
+            currentHighlight,
+            currentSchedule.length - 1,
+            'upcoming',
+            lastFull,
+            breakRange.split('-')[1],
+            currentTime,
+            true
+        );
+        return false;
+    }
 
     for (const [index, timeRange] of timeRanges.entries()) {
         const [startTime, endTime] = timeRange.split('-');
@@ -122,7 +144,8 @@ function getScheduleData() {
                 setCurrentHighlightExternal(currentHighlight, scheduleArray.length - 1, 'current', subjectFullName, endTime, currentTime);
             }
         } else if (currentHighlight.index === null && isBreakTime(startTime, endTime, currentTime)) {
-            findUpcomingExternal(index, timeRange, timeRanges, dayTimetable, scheduleArray, currentSchedule, currentTime, currentHighlight);
+            // 课间：寻找下一节课
+            findUpcoming(index, timeRange);
         } else if (currentHighlight.index === null && !dayTimetable[timeRange]) {
             currentHighlight.fullName = currentSchedule[classIndex];
         }
@@ -147,4 +170,3 @@ function formatCountdown(countdownSeconds) {
     const seconds = countdownSeconds % 60;
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
-

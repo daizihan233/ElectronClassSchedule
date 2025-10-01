@@ -389,7 +389,7 @@ function initDomAndStart() {
     window.addEventListener('mousemove', () => setDimmed(true));
 
     // 当鼠标离开窗口或页面失焦时，恢复正常透明度
-    window.addEventListener('mouseout', (_) => {
+    window.addEventListener('mouseout', () => {
         setDimmed(false);
     });
     window.addEventListener('blur', () => setDimmed(false));
