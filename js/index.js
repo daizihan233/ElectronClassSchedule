@@ -17,14 +17,14 @@ setDayOffsetLastDay = Number(localStorage.getItem('setDayOffsetLastDay'))
 
 function getCurrentEditedDate() {
     let d = new Date();
-    d.setSeconds(d.getSeconds() + parseInt(timeOffset))
+    d.setSeconds(d.getSeconds() + Number.parseInt(timeOffset))
     return d;
 }
 
 function getCurrentEditedDay(date) {
-    if (parseInt(dayOffset) === -1)
+    if (Number.parseInt(dayOffset) === -1)
         return date.getDay();
-    if (parseInt(setDayOffsetLastDay) === new Date().getDay()) {
+    if (Number.parseInt(setDayOffsetLastDay) === new Date().getDay()) {
         return dayOffset;
     }
     localStorage.setItem('dayOffset', '-1')
@@ -88,7 +88,7 @@ function getScheduleData() {
     const divider = scheduleConfig.divider[timetable];
     let scheduleArray = [];
     let currentHighlight = { index: null, type: null, fullName: null, countdown: null, countdownText: null };
-    Object.keys(dayTimetable).forEach((timeRange, index) => {
+    for (const [index, timeRange] of Object.keys(dayTimetable).entries()) {
         const [startTime, endTime] = timeRange.split('-');
         const classIndex = dayTimetable[timeRange];
 
@@ -131,7 +131,7 @@ function getScheduleData() {
             // 当前时间是非课程时间（如课间休息）
             currentHighlight.fullName = currentSchedule[classIndex]; // 使用时间表中的描述
         }
-    });
+    }
     return { scheduleArray, currentHighlight, timetable, divider };
 }
 

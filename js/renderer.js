@@ -61,7 +61,7 @@ function initBannerMarquee() {
 
   function cleanupTrack() {
     if (el._track && el.contains(el._track)) {
-      el.removeChild(el._track);
+        el._track.remove()
     }
     el._track = null;
   }
@@ -104,7 +104,7 @@ function initBannerMarquee() {
     el.appendChild(measurer);
     const containerW = el.clientWidth;
     const measured = measurer.getBoundingClientRect().width;
-    el.removeChild(measurer);
+    measurer.remove();
     textWidth = Math.ceil(measured);
     needScroll = textWidth > containerW;
 

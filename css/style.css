@@ -19,7 +19,7 @@
 }
 
 @font-face {
-    font-family: Sou;
+    font-family: Sou, serif;
     src: url("../font/SourceHanSansCN-Bold.otf");
 }
 
@@ -38,6 +38,7 @@
     transition: opacity .5s .2s;
 }
 
+/*noinspection CssUnresolvedCustomProperty*/
 .background {
     border-radius: var(--global-border-radius);
     background-color: rgba(0, 0, 0, var(--global-bg-opacity));
@@ -47,7 +48,7 @@
 }
 
 .classContainer {
-    font-family: YouYuan;
+    font-family: YouYuan, serif;
     position: relative;
     display: flex;
     flex-direction: row;
@@ -55,6 +56,7 @@
     width: auto;
 }
 
+/*noinspection CssUnresolvedCustomProperty*/
 .globalContainer {
     position: fixed;
     top: var(--top-space);
@@ -62,6 +64,7 @@
     transform: translateX(-50%);
 }
 
+/*noinspection CssUnresolvedCustomProperty*/
 .class {
     color: rgba(255, 255, 255, 1);
     margin: 0 var(--main-horizontal-space);
@@ -93,12 +96,12 @@
 }
 
 .sidebar {
-    /* height: 100%; */
     position: absolute;
     top: 0;
-    font-family: Ali;
+    font-family: Ali, serif;
 }
 
+/*noinspection CssUnresolvedCustomProperty*/
 .rightSidebar {
     right: 0;
     color: #FF3a3a;
@@ -106,6 +109,7 @@
     margin-top: calc(var(--banner-height) + 4px);
 }
 
+/*noinspection CssUnresolvedCustomProperty*/
 .weatherSidebar {
     right: 0;
     left: 0;
@@ -113,6 +117,7 @@
     transform: translateX(calc(100% + var(--container-space)));
 }
 
+/*noinspection CssUnresolvedCustomProperty*/
 .leftSidebar {
     left: 0;
     color: rgb(0, 238, 255);
@@ -121,19 +126,22 @@
     margin-top: calc(var(--banner-height) + 4px);
 }
 
+/*noinspection CssUnresolvedCustomProperty*/
 .corner {
     display: inline;
     font-size: var(--corner-font-size);
     color: rgba(255, 255, 255, 1);
-    font-family: Sou;
+    font-family: Sou, serif;
 }
 
+/*noinspection CssUnresolvedCustomProperty*/
 .countdownContainer {
     position: absolute;
     transition: all 2s;
     margin-top: calc(var(--banner-height) + 4px);
 }
 
+/*noinspection CssUnresolvedCustomProperty*/
 .triangle {
     width: 0;
     height: 0;
@@ -145,6 +153,7 @@
     transform: translateX(-50%);
 }
 
+/*noinspection CssUnresolvedCustomProperty*/
 .countdowner {
     background-color: rgba(0, 0, 0, var(--global-bg-opacity));
     border-radius: var(--global-border-radius);
@@ -156,7 +165,7 @@
 .currentClass {
     color: rgba(0, 255, 10, 1);
     display: inline;
-    font-family: Sou;
+    font-family: Sou, serif;
     transition: all 2s;
     font-weight: bold;
 }
@@ -164,9 +173,10 @@
 .countdown {
     color: rgba(255, 255, 255, 1);
     display: inline;
-    font-family: Rec;
+    font-family: Rec, serif;
 }
 
+/*noinspection CssUnresolvedCustomProperty*/
 .miniCountdown {
     position: fixed;
     left: 50%;
@@ -176,11 +186,12 @@
     background-color: rgba(0, 0, 0, var(--global-bg-opacity));
     padding: var(--countdown-bg-padding);
     font-size: var(--countdown-font-size);
-    font-family: Rec;
+    font-family: Rec, serif;
     color: #FFF;
     display: none;
 }
 
+/*noinspection CssUnresolvedCustomProperty*/
 .divider {
     width: var(--divider-width);
     background-color: #aaa;
@@ -188,11 +199,13 @@
     margin: var(--divider-margin);
 }
 
+/*noinspection CssUnresolvedCustomProperty*/
 .subClass {
     display: inline;
     font-size: var(--sub-font-size);
 }
 
+/*noinspection CssUnresolvedCustomProperty*/
 .banner {
     display: flex;
     flex-direction: row;
@@ -204,10 +217,11 @@
 }
 
 
+/*noinspection CssUnresolvedCustomProperty*/
 #bannerText {
     font-size: calc(var(--banner-height) * 0.8);
     color: rgba(255, 255, 255, 1);
-    font-family: Sou;
+    font-family: Sou, serif;
     /* 说实话我也不知道为啥这里可以这么写，但这么写确实成了 */
     flex: 1;
     width: 0;
