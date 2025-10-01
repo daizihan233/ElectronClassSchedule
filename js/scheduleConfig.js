@@ -109,4 +109,4 @@ const _scheduleConfig = {
     }
 }
 
-let scheduleConfig = JSON.parse(JSON.stringify(_scheduleConfig));
+let scheduleConfig = structuredClone(_scheduleConfig);

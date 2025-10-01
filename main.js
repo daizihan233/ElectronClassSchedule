@@ -1,8 +1,8 @@
 const electron = require('electron');
 const { app, BrowserWindow, Menu, ipcMain, dialog, screen, Tray, shell } = electron
-const path = require('path');
-const fs = require('fs')
-const os = require('os')
+const path = require('node:path');
+const fs = require('node:fs')
+const os = require('node:os')
 const createShortcut = require('windows-shortcuts')
 const startupFolderPath = path.join(os.homedir(), 'AppData', 'Roaming', 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup');
 const prompt = require('electron-prompt');
@@ -506,6 +506,7 @@ ipcMain.handle('getCursorAndBounds', () => {
         const bounds = win?.getBounds?.() || { x: 0, y: 0, width: 0, height: 0 }
         return { cursor: pt, bounds }
     } catch (e) {
+        console.error('getCursorAndBounds error:', e)
         return { cursor: { x: 0, y: 0 }, bounds: { x: 0, y: 0, width: 0, height: 0 } }
     }
 })
