@@ -117,7 +117,7 @@ function getScheduleData() {
             }
         }
         // 没有后续课程，标记为结束
-        const lastShort = currentSchedule[currentSchedule.length - 1];
+        const lastShort = currentSchedule.at(-1);
         const lastFull = scheduleConfig.subject_name[lastShort] || '';
         setCurrentHighlightExternal(
             currentHighlight,

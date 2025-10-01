@@ -196,7 +196,7 @@ function setScheduleClass() {
     let classHtml = '';
     for (let i = 0; i < scheduleData.scheduleArray.length; i++) {
         let inner = scheduleData.scheduleArray[i]
-        if (scheduleData.scheduleArray[i].indexOf('@') !== -1) {
+        if (scheduleData.scheduleArray[i].includes('@')) {
             inner = `<div><div style="display:inline">${inner.split('@')[0]}</div><div class="subClass">${inner.split('@')[1]}</div></div>`
         }
         if (scheduleData.currentHighlight.index === i) {
@@ -210,7 +210,7 @@ function setScheduleClass() {
             classHtml += `<div class="class" style="color:rgba(166,166,166);">${inner}</div>`
         else
             classHtml += `<div class="class">${inner}</div>`
-        if (scheduleData.divider.indexOf(i) !== -1)
+        if (scheduleData.divider.includes(i))
             classHtml += '<div class="divider"></div>'
     }
     classContainer.innerHTML = classHtml
@@ -281,7 +281,7 @@ function setCountdownerPosition() {
             y: classContainer.offsetHeight
         };
     } else if (scheduleData.currentHighlight.type === 'upcoming') {
-        if (scheduleData.currentHighlight.index !== 0 && scheduleData.divider.indexOf((scheduleData.currentHighlight.index - 1)) !== -1) {
+        if (scheduleData.currentHighlight.index !== 0 && scheduleData.divider.includes((scheduleData.currentHighlight.index - 1))) {
             offset = {
                 x: highlightElement.offsetLeft - cacheCountdownContainerOffsetWidth / 2 - marginLeft - dividerWidth / 2 - dividerMargin,
                 y: classContainer.offsetHeight
@@ -492,7 +492,7 @@ document.addEventListener("click", function (event) {
 });
 
 ipcRenderer.on('setWeekIndex', (e, arg) => {
-    scheduleConfig = JSON.parse(JSON.stringify(_scheduleConfig))
+    scheduleConfig = structuredClone(_scheduleConfig)
     weekIndex = arg
     localStorage.setItem('weekIndex', weekIndex.toString())
 })
@@ -540,8 +540,8 @@ ipcRenderer.on('setCloudSec', (e, arg) => {
 function applyTemperature(arg){
     if (!temperature || !weather) return; // DOM 未就绪时跳过，避免警告
     const t = Number(arg['temp'])
-    temperature.innerText = (isNaN(t) ? '-' : t) + "℃"
-    if (!isNaN(t)){
+    temperature.innerText = (Number.isNaN(t) ? '-' : t) + "℃"
+    if (!Number.isNaN(t)) {
         if (t < 24) temperature.style.color = "#66CCFF"
         else if (t <= 26) temperature.style.color = "#5FBC21"
         else temperature.style.color = "#EE0000"
@@ -665,7 +665,7 @@ function ensureBannerHeight(){
 function resetMarqueeTrack(){
     if (!bannerText) return;
     if (bannerText._track && bannerText.contains(bannerText._track)) {
-        bannerText.removeChild(bannerText._track);
+        bannerText._track.remove()
     }
     bannerText._track = null;
 }
