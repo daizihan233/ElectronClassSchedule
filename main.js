@@ -499,6 +499,17 @@ ipcMain.on('getWeekIndex', (e, arg) => {
     win.webContents.send('ClassHidden', store.get('isDuringClassHidden', true))
 })
 
+// 提供鼠标位置与窗口边界给渲染进程（用于穿透下的悬停检测）
+ipcMain.handle('getCursorAndBounds', () => {
+    try {
+        const pt = screen.getCursorScreenPoint()
+        const bounds = win?.getBounds?.() || { x: 0, y: 0, width: 0, height: 0 }
+        return { cursor: pt, bounds }
+    } catch (e) {
+        return { cursor: { x: 0, y: 0 }, bounds: { x: 0, y: 0, width: 0, height: 0 } }
+    }
+})
+
 ipcMain.on('log', (e, arg) => {
     console.log(arg);
 })
