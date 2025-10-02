@@ -7,6 +7,7 @@ on:
 
 jobs:
   build_and_publish:
+    if: ${{ !startsWith(github.event.head_commit.message, 'docs') }}
     permissions:
       contents: write
     runs-on: windows-latest
@@ -16,7 +17,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up VS
-        uses: seanmiddleditch/gha-setup-vsdevenv@v5
+        uses: seanmiddleditch/gha-setup-vsdevenv@cf96bf5b227cac6af28c04c4a4e69286ea444163
 
       - name: Set up Python
         uses: actions/setup-python@v5
