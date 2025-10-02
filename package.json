@@ -31,6 +31,9 @@
     "appId": "cn.khbit.classschedule",
     "productName": "电子课表",
     "asar": true,
+    "asarUnpack": [
+      "js/scheduleConfig.js"
+    ],
     "directories": {
       "buildResources": "build-resources"
     },
@@ -45,7 +48,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },
