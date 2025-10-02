@@ -19,29 +19,49 @@ _**本篇 README 从 [原项目](https://github.com/EnderWolf006/ElectronClassSc
 ## 食用说明
 以下为在Windows系统下的使用方法，其他操作系统请各位大佬自行拉取仓库打包，
 
-- 右侧Releases中下载Latest版本解压，`classSchedule.exe` 为程序主文件
-- 打开 `resources/app/js/scheduleConfig.js` 配置课表，里面有详细的注释，如需集控，可自行部署 [daizihan233/FastClassSchedule](https://github.com/daizihan233/FastClassSchedule)，您也可以自己实现 API！
-  - 服务端暂未实现控制台，您可以参考文档自行配置，也可以联系本项目作者 `party-turret-royal@duck.com` 协助部署
-- 设置菜单可以通过点击左侧的星期框中的中文角标或系统托盘打开。
+- 右侧 Releases 中下载最新版本，其中 `ElectronClassSchedule-Setup-xxxxxx.y.z.exe` 为程序安装包
+- 打包版本配置文件路径：`resources/app.asar.unpacked/js/scheduleConfig.js`（请在安装目录下查找 `resources`
+  文件夹）。如需集控，可自行部署 [daizihan233/FastClassSchedule](https://github.com/daizihan233/FastClassSchedule)
+  与 [daizihan233/NaiveClassSchedule](https://github.com/daizihan233/NaiveClassSchedule)，您也可以自己实现 API！
+    - 如果找不到 `app.asar.unpacked` 目录，请确认您安装的版本是否为官方打包版本，或自编译时是否启用了 asarUnpack。
+    - 服务端暂未提供部署文档，您可以联系本项目作者 `party-turret-royal@duck.com` 协助部署
+    - 本项目后期修改的大方向是向集控模式迁移，故推荐使用集控方式部署，如需帮助，亦可联系本项目作者，使用现有集控服务
+- 设置菜单可以通过点击系统托盘打开。
+- 菜单中 `当前地区` 选项可控制获取的天气信息
 - 菜单中 `课上计时` 选项可控制倒计时部分在上课时间是否显示
 - 菜单中 `上课隐藏` 选项可控制课表本体、星期以及倒计时部分在上课时间是否显示
-- 若将 `课上计时` 与 `上课隐藏` 同时开启(推荐默认开启)可实现课上仅显示倒计时小窗口
+- 若将 `课上计时` 与 `上课隐藏` 同时开启（推荐默认开启）可实现课上仅显示倒计时小窗口
+
+## 版本号说明
+
+本项目使用 electron-updater 进行自动更新，版本号使用 `语义化版本控制` 格式，但由于本项目以一种近乎于滚动升级的方式发版，所以并不遵循其命名规范。本项目的版本号命名规则如下：
+
+- `YYYYMM.D.N`
+- `YYYY`：发布时是哪年
+- `MM`：发布时是几月（固定为两位数）
+- `D`：发布时是几日
+- `N`：GitHub Action 序号
+- 例如：`202510.2.40` 表示该版本发布于 `2025 年 10 月 02 日`，GitHub Action 序号为 `40`。
 
 ## 修改说明
-- **注意：** 阅读以下内容需要一定的编程知识储备。如果您想修改软件源码自行打包（Windows），请阅读此部分内容。若您仅想使用本软件，请跳过此部分内容。
+
+- **注意：** 阅读以下内容需要一定的编程知识储备。如果您想修改软件源码自行打包（Windows），请阅读此部分内容。若您仅想使用本软件，请跳过此部分内容。不论何时，都建议您
+  fork 本仓库，并在代码内修改软件默认更新源，否则本分支后续更新可能会覆盖您的修改。
 - **声明：** 强烈不推荐直接在打包后的软件中修改源码，这将导致更新新版本与提交 PR 等操作无法顺利进行。
-1. 安装 Node.js v20 或以上版本。
-2. 安装 Visual Studio v2019 或以上版本。
-3. 安装 Python v3.8 或以上版本。
+- **注释：** 下文中的建议版本为开发本软件时本人电脑上所安装的版本，其他环境均未测试。最低版本仅为估计的最低版本，实际可能更低或更高。
+
+1. 安装 Node.js v20 或以上版本 *（建议：v22）*
+2. 安装 Visual Studio v2019 或以上版本 *（建议：v2022）*
+3. 安装 Python v3.8 或以上版本 *（建议：v3.12）*
 4. 使用 Git 克隆本仓库代码：在终端中执行 `git clone https://github.com/daizihan233/ElectronClassSchedule.git`。
 5. 在本项目根目录中打开终端并执行 `pip install setuptools`。
 6. 在本项目根目录中打开终端并执行 `npm install`。
-7. 在本项目根目录中打开终端并执行 `npm run rebuild`。
-8. 在本项目根目录中打开终端并执行 `npm run build`。
+7. 在本项目根目录中打开终端并执行 `npm run build`。
 
-- 执行上述环境及命令后，将在根目录生成一个 `out` 文件夹，其中包含您本地打包好的软件文件。
-- 然后您可以修改软件代码，使用 `npm start` 调试，使用 `npm run build` 打包。
-- 如果您认为您修改开发的软件内容可能对其他人有相似需求，您可以通过 Git 向主分支 `main` 提交 PR（Pull Request）。通过合并后，您的代码将并入主分支，为更多的人提供便利。
+- 执行上述环境及命令后，将在根目录生成一个 `dist` 文件夹，其中包含您本地打包好的软件安装包。
+- 然后您可以修改软件代码，使用 `npm debug` 调试，使用 `npm run build` 打包。
+- 如果您认为您修改开发的软件内容可能对其他人有相似需求，您可以通过 Git 向主分支 `main` 提交 PR（Pull
+  Request）。通过审查后，您的代码将并入主分支，为更多的人提供便利。
 
 ## 开源协议
 
