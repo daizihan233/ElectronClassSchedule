@@ -16,6 +16,45 @@ let template = []
 // 统一资源路径解析，兼容 asar
 const asset = (...p) => path.join(__dirname, ...p)
 
+// JSONC 简易去注释
+function stripJsonComments(str) {
+    try {
+        // 去掉块注释
+        str = str.replace(/\/\*[\s\S]*?\*\//g, '');
+        // 去掉行注释（忽略字符串内 // 的复杂情况，这里假设用户配置较为简单）
+        str = str.replace(/^\s*\/\/.*$/gm, '');
+        return str;
+    } catch {
+        return str
+    }
+}
+
+// 仅读取用户配置（JSONC），不写回，避免破坏注释
+function getUserConfigPath() {
+    try {
+        return path.join(app.getPath('userData'), 'scheduleConfig.user.jsonc')
+    } catch {
+        return null
+    }
+}
+
+function readUserConfigSafe() {
+    try {
+        const p = getUserConfigPath();
+        if (!p) return null;
+        if (!fs.existsSync(p)) return null;
+        const raw = fs.readFileSync(p, 'utf-8');
+        const cleaned = stripJsonComments(raw);
+        try {
+            return JSON.parse(cleaned)
+        } catch {
+            return null
+        }
+    } catch {
+        return null
+    }
+}
+
 function doNothing(_) { /* 一些 dialog 会返回一个 promise 但并不需要处理 */ }
 
 // 使用函数动态获取协议与服务器，避免缓存导致不一致
@@ -281,6 +320,10 @@ app.whenReady().then(() => {
     try { DisableMinimize(handle) } catch (e) { console.warn('DisableMinimize failed:', e?.message || e) }
     setAutoLaunch()
 })
+
+// 仅提供读取用户配置的 IPC
+ipcMain.handle('readUserConfig', () => readUserConfigSafe())
+ipcMain.handle('getUserConfigPath', () => getUserConfigPath())
 
 ipcMain.on('getWeekIndex', (e, arg) => {
     tray = new Tray(asset('image', 'icon.png'))

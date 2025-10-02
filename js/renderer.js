@@ -1,4 +1,36 @@
 const { ipcRenderer } = require('electron');
+
+// 新增：深合并与用户配置加载/保存
+function isPlainObject(x) {
+    return x && typeof x === 'object' && !Array.isArray(x);
+}
+
+function deepMerge(base, override) {
+    if (!isPlainObject(base)) return structuredClone(override);
+    const out = {...base};
+    for (const k of Object.keys(override || {})) {
+        const bv = base?.[k];
+        const ov = override[k];
+        if (isPlainObject(bv) && isPlainObject(ov)) out[k] = deepMerge(bv, ov)
+        else out[k] = Array.isArray(ov) ? ov.slice() : ov;
+    }
+    return out;
+}
+
+async function loadAndMergeUserConfig() {
+    try {
+        const user = await ipcRenderer.invoke('readUserConfig');
+        if (user && typeof user === 'object') {
+            scheduleConfig = deepMerge(structuredClone(_scheduleConfig), user)
+        } else {
+            scheduleConfig = structuredClone(_scheduleConfig)
+        }
+        // 不写回：避免破坏用户配置中的注释
+    } catch {
+        scheduleConfig = structuredClone(_scheduleConfig)
+    }
+}
+
 let scheduleData = getScheduleData();
 // DOM 元素引用延后初始化
 let classContainer;
@@ -391,7 +423,10 @@ function scheduleNextTick() {
 }
 
 // 初始样式应用与事件注册改为 DOMContentLoaded 后执行
-function initDomAndStart() {
+async function initDomAndStart() {
+    // 启动时读取用户配置并与默认配置深合并
+    await loadAndMergeUserConfig();
+
     // 绑定 DOM 引用
     classContainer = document.getElementById('classContainer')
     countdownContainer = document.getElementById('countdownContainer')
@@ -414,7 +449,7 @@ function initDomAndStart() {
     // 初始化跑马灯能力（此顺序确保 start/stop 方法存在）
     initBannerMarquee();
 
-    // 首次应用配置样式
+    // 首次应用配置样式（基于合并后的 scheduleConfig）
     for (const key in scheduleConfig.css_style) {
         root.style.setProperty(key, scheduleConfig.css_style[key])
     }
@@ -478,11 +513,14 @@ function initDomAndStart() {
     // 尝试应用一次 banner，以处理初始化前产生的更新
     setBanner();
 
-    // 启动心跳渲染
+    // 启动心跳渲染（在合并配置后再启动）
     scheduleNextTick();
 }
 
-globalThis.addEventListener('DOMContentLoaded', initDomAndStart)
+globalThis.addEventListener('DOMContentLoaded', () => {
+    initDomAndStart().catch(() => {
+    })
+})
 
 function setScheduleDialog() {
     ipcRenderer.send('dialog', {
@@ -520,6 +558,7 @@ ipcRenderer.on('getSelectedChangingClass', (e, arg) => {
     const date = getCurrentEditedDate();
     const dayOfWeek = getCurrentEditedDay(date);
     scheduleConfig.daily_class[dayOfWeek].classList[index] = selectedClass;
+    // 不持久化：改课仅在本次会话有效
 })
 
 ipcRenderer.on('openSettingDialog', () => {
@@ -626,6 +665,7 @@ function recomputeWeatherWarnFromLast() {
 }
 
 ipcRenderer.on('newConfig', (e, arg) => {
+    // 云端下发的配置仅在当前会话生效，不写入本地用户配置
     scheduleConfig = arg
     for (const key in scheduleConfig.css_style) {
         root.style.setProperty(key, scheduleConfig.css_style[key])
