@@ -116,8 +116,24 @@ function getScheduleData() {
                 return true;
             }
         }
-        // 没有后续课程，标记为结束（放学）
-        const dismissalLabel = (scheduleConfig['end_of_day_label']) || '放学';
+        // 没有后续课程：遵循 timetable 的字符串标签，而不是恒定“放学”
+        // 1) 优先使用后续时段中出现的第一个字符串标签
+        let followingLabel = '';
+        for (let i = breakIndex + 1; i < timeRanges.length; i++) {
+            const v = dayTimetable[timeRanges[i]];
+            if (typeof v !== 'number' && v) {
+                followingLabel = String(v);
+                break;
+            }
+        }
+        // 2) 若没有后续标签，则尝试用当前时段本身的标签（通常就是“放学”等）
+        if (!followingLabel) {
+            const curVal = dayTimetable[breakRange];
+            if (typeof curVal !== 'number' && curVal) followingLabel = String(curVal);
+        }
+        // 3) 仍无则回退到 end_of_day_label 或默认"放学"
+        const dismissalFallback = (scheduleConfig['end_of_day_label']) || '放学';
+        const dismissalLabel = followingLabel || dismissalFallback;
         setCurrentHighlightExternal(
             currentHighlight,
             Math.max(0, currentSchedule.length - 1),
