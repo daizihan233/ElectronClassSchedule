@@ -465,8 +465,31 @@ async function initDomAndStart() {
         root.style.opacity = dim ? '0.1' : '1';
     }
 
-    // 鼠标在窗口内移动：仅此时降低透明度
-    globalThis.addEventListener('mousemove', () => setDimmed(true));
+    // 仅当悬浮在特定元素上时降低透明度
+    function getHoverCandidates() {
+        return [
+            classContainer,
+            countdownContainer?.style?.display !== 'none' ? countdownContainer : null,
+            miniCountdown?.style?.display !== 'none' ? miniCountdown : null,
+            leftSidebar?.style?.display !== 'none' ? leftSidebar : null,
+            rightSidebar?.style?.display !== 'none' ? rightSidebar : null,
+            banner?.style?.display !== 'none' ? banner : null,
+        ].filter(Boolean)
+    }
+
+    function isTargetInCandidates(target) {
+        if (!target) return false
+        const candidates = getHoverCandidates()
+        for (const el of candidates) {
+            if (el?.contains?.(target)) return true
+        }
+        return false
+    }
+
+    // 事件委托：基于 event.target 判定（若点击穿透导致收不到事件，下面的轮询仍可生效）
+    globalThis.addEventListener('mousemove', (e) => {
+        setDimmed(isTargetInCandidates(e?.target || null))
+    })
 
     // 当鼠标离开窗口或页面失焦时，恢复正常透明度
     globalThis.addEventListener('mouseout', () => {
@@ -480,25 +503,32 @@ async function initDomAndStart() {
     setDimmed(false)
     ipcRenderer.send('setIgnore', true)
 
-    // 使用主进程提供的鼠标位置 + 窗口边界做轮询悬停检测
+    // 轮询：在点击穿透下，依据光标与窗口边界将坐标换算为页面坐标，仅当光标落入候选元素矩形内才变暗
     let hoverTimer = null
     let lastDimmed = null
-    const NEAR_PAD = 12 // 邻近像素容差
-    function isNear(cursor, bounds){
-        if (!cursor || !bounds) return false
-        const x1 = bounds.x - NEAR_PAD
-        const y1 = bounds.y - NEAR_PAD
-        const x2 = bounds.x + (bounds.width || 0) + NEAR_PAD
-        const y2 = bounds.y + (bounds.height || 0) + NEAR_PAD
-        return cursor.x >= x1 && cursor.x <= x2 && cursor.y >= y1 && cursor.y <= y2
+
+    function isClientHovering(clientX, clientY) {
+        const candidates = getHoverCandidates()
+        for (const el of candidates) {
+            const r = el?.getBoundingClientRect?.()
+            if (!r) continue
+            if (clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom) return true
+        }
+        return false
     }
     async function pollHover(){
         try {
             const data = await ipcRenderer.invoke('getCursorAndBounds')
-            const near = isNear(data?.cursor, data?.bounds)
-            if (near !== lastDimmed){
-                setDimmed(!!near)
-                lastDimmed = !!near
+            const dpr = globalThis.devicePixelRatio || 1
+            const cx = (data?.cursor?.x ?? 0) - (data?.bounds?.x ?? 0)
+            const cy = (data?.cursor?.y ?? 0) - (data?.bounds?.y ?? 0)
+            let hovering = isClientHovering(cx, cy)
+            if (!hovering && dpr !== 1) {
+                hovering = isClientHovering(cx / dpr, cy / dpr) || isClientHovering(cx * dpr, cy * dpr)
+            }
+            if (hovering !== lastDimmed) {
+                setDimmed(!!hovering)
+                lastDimmed = !!hovering
             }
         } catch {}
     }
