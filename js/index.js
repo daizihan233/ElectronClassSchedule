@@ -97,19 +97,36 @@ function getScheduleData() {
     const timeRanges = Object.keys(dayTimetable);
 
     const findUpcoming = (breakIndex, breakRange) => {
-        // 选择接下来最近的一节课作为 upcoming
+        // 选择接下来最近的一节课作为 upcoming（高亮位置用下一节课），
+        // 但显示的文字应为当前课间/时段在 timetable 中配置的标签。
+        let breakLabel = '';
+        const curVal = dayTimetable[breakRange];
+        if (typeof curVal !== 'number' && curVal) breakLabel = String(curVal);
+
+        // 如果 timetable 没给当前时段配置标签，则尝试向后找第一个字符串标签做为显示
+        if (!breakLabel) {
+            for (let i = breakIndex; i < timeRanges.length; i++) {
+                const v = dayTimetable[timeRanges[i]];
+                if (typeof v !== 'number' && v) {
+                    breakLabel = String(v);
+                    break;
+                }
+            }
+        }
+        // 兜底课间标签
+        if (!breakLabel) breakLabel = (scheduleConfig['break_label']) || '课间';
+
+        // 选择下一节课用于定位 upcoming 的 index
         for (let i = breakIndex + 1; i < timeRanges.length; i++) {
             const nextTimeRange = timeRanges[i];
             const nextClassIndex = dayTimetable[nextTimeRange];
             if (typeof nextClassIndex === 'number') {
-                const short = currentSchedule[nextClassIndex];
-                const full = scheduleConfig.subject_name[short];
                 // scheduleArray.length 指向下一节在列表中的位置
                 setCurrentHighlightExternal(
                     currentHighlight,
                     scheduleArray.length,
                     'upcoming',
-                    full,
+                    breakLabel, // 注意：显示当前课间/标签，而不是下一节课名
                     breakRange.split('-')[1],
                     currentTime
                 );
@@ -128,8 +145,8 @@ function getScheduleData() {
         }
         // 2) 若没有后续标签，则尝试用当前时段本身的标签（通常就是“放学”等）
         if (!followingLabel) {
-            const curVal = dayTimetable[breakRange];
-            if (typeof curVal !== 'number' && curVal) followingLabel = String(curVal);
+            const curVal2 = dayTimetable[breakRange];
+            if (typeof curVal2 !== 'number' && curVal2) followingLabel = String(curVal2);
         }
         // 3) 仍无则回退到 end_of_day_label 或默认"放学"
         const dismissalFallback = (scheduleConfig['end_of_day_label']) || '放学';
