@@ -32,9 +32,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Rebuild native deps for Electron
-        run: npx electron-rebuild
-
       - name: Compute rolling version and write to package.json
         shell: pwsh
         run: |
@@ -53,7 +50,7 @@ jobs:
       - name: Build and publish to GitHub Releases (rolling)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --win --x64 --publish always
+        run: npm run build
 
       - name: Upload dist as artifact
         uses: actions/upload-artifact@v4
