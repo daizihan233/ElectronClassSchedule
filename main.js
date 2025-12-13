@@ -583,7 +583,7 @@ ipcMain.on('getWeather', () => {
     const { net } = require('electron')
     const { agreement } = getProtocols()
     const request = net.request(
-        `${agreement}://${getServer()}/api/weather/${store.get('local', "Nanjing/Gulou")}`
+        `${agreement}://${getServer()}/api/weather/${store.get('local', "")}`
     )
     let raw = ''
     request.on('response', (response) => {
