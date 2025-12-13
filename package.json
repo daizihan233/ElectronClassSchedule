@@ -61,7 +61,11 @@
       "shortcutName": "电子课表",
       "deleteAppDataOnUninstall": false,
       "include": "build/installer.nsh",
-      "packElevateHelper": false
+      "packElevateHelper": false,
+      "artifactName": "ElectronClassSchedule-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "ElectronClassSchedule-Portable-${version}.${ext}"
     },
     "publish": [
       {
