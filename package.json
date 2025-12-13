@@ -1,6 +1,6 @@
 {
   "name": "electron_class_schedule",
-  "version": "0.0.0",
+  "version": "2147483647.1.0",
   "description": "classSchedule",
   "main": "main.js",
   "author": "KuoHu",
@@ -8,22 +8,23 @@
   "scripts": {
     "debug": "chcp 65001 && electron . --enable-logging",
     "rebuild": "electron-rebuild",
-    "build": "electron-builder --win --x64",
-    "dist": "electron-builder --win --x64",
+    "build": "electron-builder --win --ia32",
     "postinstall": "electron-builder install-app-deps"
   },
   "devDependencies": {
+    "@electron/packager": "^19.0.1",
     "@electron/rebuild": "^3.6.0",
     "electron": "^22.3.27",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "electron-packager": "^17.1.2"
   },
   "dependencies": {
     "electron-disable-minimize": "^2.1.0",
     "electron-prompt": "^1.7.0",
     "electron-store": "^8.1.0",
     "electron-updater": "^6.3.9",
-    "node-gyp": "^10.0.1",
     "fstream": "1.0.12",
+    "node-gyp": "^10.0.1",
     "windows-shortcuts": "^0.1.6",
     "ws": "^8.18.0"
   },
@@ -46,12 +47,8 @@
     ],
     "win": {
       "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
+        "nsis",
+        "portable"
       ]
     },
     "nsis": {
@@ -62,7 +59,9 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "电子课表",
-      "artifactName": "ElectronClassSchedule-Setup-${version}.${ext}"
+      "deleteAppDataOnUninstall": false,
+      "include": "build/installer.nsh",
+      "packElevateHelper": false
     },
     "publish": [
       {
