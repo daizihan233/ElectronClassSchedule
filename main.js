@@ -417,7 +417,7 @@ ipcMain.on('getWeekIndex', (e, arg) => {
                 prompt({
                     title: '地理位置',
                     label: '请设置当前所在地区:',
-                    value: store.get('local', "Nanjing/Gulou"),
+                    value: store.get('local', ""),
                     inputAttrs: {
                         type: 'string'
                     },
