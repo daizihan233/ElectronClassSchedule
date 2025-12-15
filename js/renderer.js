@@ -266,9 +266,11 @@ function setScheduleClass() {
             if (scheduleData.currentHighlight.isEnd)
                 classHtml += `<div class="class" id="highlighted" style="color:rgba(166,166,166);">${inner}</div>`
             else if (scheduleData.currentHighlight.type === 'current')
-                classHtml += `<div class="class current" id="highlighted">${inner}</div>`
+                // 根据网络连接状态设置当前课程的类
+                classHtml += `<div class="class current ${!wsConnected ? 'disconnected' : ''}" id="highlighted">${inner}</div>`
             else if (scheduleData.currentHighlight.type === 'upcoming')
-                classHtml += `<div class="class upcoming" id="highlighted">${inner}</div>`
+                // 根据网络连接状态设置即将到来课程的类
+                classHtml += `<div class="class upcoming ${!wsConnected ? 'disconnected' : ''}" id="highlighted">${inner}</div>`
         } else if (scheduleData.currentHighlight.index > i)
             classHtml += `<div class="class" style="color:rgba(166,166,166);">${inner}</div>`
         else
@@ -292,7 +294,14 @@ function setBackgroundDisplay() {
 
 function setCountdownerContent() {
     currentFullName.innerText = scheduleData.currentHighlight.fullName;
-    currentFullName.style.color = scheduleData.currentHighlight.type === 'current' ? 'rgba(0, 255, 10, 1)' : 'rgba(255, 255, 5, 1)'
+    // 根据连接状态和课程类型设置颜色
+    if (scheduleData.currentHighlight.type === 'current') {
+        // 当前课程：如果连接正常为绿色，连接异常时为橙色
+        currentFullName.style.color = wsConnected ? 'rgba(0, 255, 10, 1)' : 'rgba(255, 165, 0, 1)';
+    } else {
+        // 非当前课程保持黄色
+        currentFullName.style.color = 'rgba(255, 255, 5, 1)';
+    }
     countdownText.innerText = scheduleData.currentHighlight.countdownText;
     if (scheduleData.currentHighlight.type === 'current') {
         if (isClassCountdown) {
@@ -300,7 +309,9 @@ function setCountdownerContent() {
                 countdownContainer.style.display = 'none'
                 miniCountdown.style.display = 'block'
                 // 仅渲染文本，避免对 currentFullName.innerText 的副作用
-                miniCountdown.innerHTML = `<div class="currentClass">${scheduleData.currentHighlight.fullName}</div><div class="countdown" style="margin-left:5px">${scheduleData.currentHighlight.countdownText}</div>`
+                // 根据网络连接状态设置currentClass的颜色
+                const currentClassColor = wsConnected ? 'rgba(0, 255, 10, 1)' : 'rgba(255, 165, 0, 1)';
+                miniCountdown.innerHTML = `<div class="currentClass" style="color: ${currentClassColor}">${scheduleData.currentHighlight.fullName}</div><div class="countdown" style="margin-left:5px">${scheduleData.currentHighlight.countdownText}</div>`
             } else { // 上课 并且开启了倒计时 并且 不隐藏主体 -> 正常计时
                 countdownContainer.style.display = 'block'
                 miniCountdown.style.display = 'none'
@@ -407,9 +418,16 @@ function tick(reset = false) {
         setCountdownerPosition()
         setSidebar()
         setBackgroundDisplay()
+    } else {
+        // 即使没有课程变化，如果连接状态变化，也需要更新颜色
+        if (lastScheduleData.wsConnected !== wsConnected) {
+            updateClassHighlightColors(wsConnected);
+            updateUIColorsForConnectionStatus(wsConnected);
+        }
     }
     // noinspection JSUnresolvedReference
-    lastScheduleData = $.extend(true, {}, scheduleData)
+    lastScheduleData = $.extend(true, {}, scheduleData);
+    lastScheduleData.wsConnected = wsConnected; // 保存连接状态用于比较
 }
 
 // 使用对齐系统秒的调度，避免 20ms 轮询
@@ -545,6 +563,11 @@ async function initDomAndStart() {
 
     // 启动心跳渲染（在合并配置后再启动）
     scheduleNextTick();
+
+    // 确保当前连接状态的颜色被正确应用
+    if (wsConnected !== undefined) {
+        updateUIColorsForConnectionStatus(wsConnected);
+    }
 }
 
 globalThis.addEventListener('DOMContentLoaded', () => {
@@ -794,20 +817,103 @@ ipcRenderer.on('ws-status', (e, arg) => {
 
     console.log('[Renderer] WebSocket status changed:', wsConnected);
 
-    // 如果是连接状态变化，更新UI提示
+    // 如果是连接状态变化，更新UI状态
     if (wasConnected !== wsConnected) {
         if (!wsConnected) {
-            // 连接断开，显示提示
-            console.log('[Renderer] WebSocket disconnected, showing status...');
-            // 可以选择在UI上显示连接状态，但不弹窗
-            // 例如：更新某个状态指示器
+            // 连接断开，更新UI颜色为橙色
+            console.log('[Renderer] WebSocket disconnected, updating UI to show warning state');
+            updateUIColorsForConnectionStatus(false);
         } else {
-            // 连接恢复，清除提示
-            console.log('[Renderer] WebSocket reconnected');
+            // 连接恢复，更新UI颜色为绿色
+            console.log('[Renderer] WebSocket reconnected, updating UI to show connected state');
+            updateUIColorsForConnectionStatus(true);
         }
     }
 });
 
+// 根据连接状态更新UI颜色
+function updateUIColorsForConnectionStatus(connected) {
+    console.log('[Renderer] Updating UI colors for connection status:', connected);
+
+    if (currentFullName && scheduleData?.currentHighlight?.type) {
+        if (scheduleData.currentHighlight.type === 'current') {
+            // 根据连接状态设置颜色：连接时为绿色，断开时为橙色
+            currentFullName.style.color = connected ? 'rgba(0, 255, 10, 1)' : 'rgba(255, 165, 0, 1)';
+            console.log('[Renderer] Set currentFullName color to', connected ? 'green' : 'orange');
+        } else {
+            currentFullName.style.color = 'rgba(255, 255, 5, 1)'; // 非当前课程保持黄色
+        }
+    } else {
+        console.log('[Renderer] currentFullName or scheduleData not ready, deferring color update');
+    }
+
+    // 更新课表高亮颜色
+    updateClassHighlightColors(connected);
+}
+
+// 更新miniCountdown中的currentClass颜色
+function updateMiniCountdownColor(connected) {
+    if (miniCountdown && miniCountdown.style.display !== 'none') {
+        const currentClassElement = miniCountdown.querySelector('.currentClass');
+        if (currentClassElement) {
+            currentClassElement.style.color = connected ? 'rgba(0, 255, 10, 1)' : 'rgba(255, 165, 0, 1)';
+            console.log('[Renderer] Updated miniCountdown currentClass color to', connected ? 'green' : 'orange');
+        }
+    }
+}
+
+// 更新课表高亮颜色
+function updateClassHighlightColors(connected) {
+    const highlightedElement = document.getElementById('highlighted');
+    if (!highlightedElement) {
+        console.log('[Renderer] No highlighted element found, cannot update class colors');
+        return;
+    }
+
+    console.log('[Renderer] Updating highlighted element color for connection status:', connected);
+
+    if (highlightedElement.classList.contains('current')) {
+        highlightedElement.style.color = connected ? 'rgba(0, 255, 10, 1)' : 'rgba(255, 165, 0, 1)';
+        console.log('[Renderer] Set current class color to', connected ? 'green' : 'orange');
+    } else if (highlightedElement.classList.contains('upcoming')) {
+        // 对于即将到来的课程，根据连接状态设置颜色和动画
+        if (!connected) {
+            // 添加disconnected类以使用橙色闪烁动画
+            highlightedElement.classList.add('disconnected');
+            highlightedElement.style.color = 'rgba(255, 165, 0, 1)';
+            console.log('[Renderer] Set upcoming class to disconnected state with orange animation');
+        } else {
+            // 移除disconnected类以使用绿色闪烁动画
+            highlightedElement.classList.remove('disconnected');
+            highlightedElement.style.color = 'rgba(0, 255, 10, 1)';
+            // 重新启动动画
+            highlightedElement.classList.remove('upcoming');
+            void highlightedElement.offsetWidth; // 强制重排以重新启动动画
+            highlightedElement.classList.add('upcoming');
+            console.log('[Renderer] Set upcoming class to connected state with green animation');
+        }
+    }
+
+    // 同时更新miniCountdown的颜色
+    updateMiniCountdownColor(connected);
+}
+
+// 更新ToolTip显示连接状态
+function updateTrayTooltip() {
+    // 获取当前应用版本
+    // 由于无法直接从渲染进程中获取版本，我们可以通过IPC向主进程请求
+    // 暂时显示连接状态信息
+    const statusText = wsConnected ? '已连接' : '连接断开';
+    // 我们需要通过IPC向主进程发送当前网络状态，以便更新tray tooltip
+    ipcRenderer.send('update-tray-status', {connected: wsConnected, status: statusText});
+}
+
+// 处理从主进程发送的tray状态更新事件
+ipcRenderer.on('update-tray-status', (e, arg) => {
+    // 实际上这个事件处理在这里不需要，因为更新tray tooltip是主进程的任务
+    // 渲染进程只需要关注UI颜色更新
+    console.log('[Renderer] Tray status update received:', arg);
+});
 // 辅助：确保 banner 高度可见
 function ensureBannerHeight(){
     if (!root) return; // 未初始化时跳过

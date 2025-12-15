@@ -9,6 +9,17 @@ const prompt = require('electron-prompt');
 const Store = require('electron-store');
 const { DisableMinimize } = require('electron-disable-minimize');
 const store = new Store();
+
+// 添加全局错误处理，防止未捕获的异常导致弹窗
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    // 不显示错误弹窗，仅记录错误
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    // 不显示错误弹窗，仅记录错误
+});
 let tray;
 let form;
 let win;
@@ -113,99 +124,203 @@ function connect(rejectUnauthorized = true, resetErrorFlag = false) {
     const url = `${agreementWs}://${server}/ws/${classId}`
 
     try {
+
         // 关闭旧连接与心跳
+
         try {
+
             if (ws) {
+
                 ws.removeAllListeners();
+
                 ws.close();
+
             }
+
         } catch {
         }
+
         clearHeartbeat()
 
-        ws = new WebSocket(url, [], { rejectUnauthorized })
+
+        ws = new WebSocket(url, [], {rejectUnauthorized})
+
+
+        // 为WebSocket实例添加错误监听器，确保任何错误都不会导致弹窗
+
+        // 重要：必须在WebSocket实例创建后立即添加错误监听器，以捕获所有错误
+
+        ws.on('error', (error) => {
+
+            console.error('WebSocket error:', error)
+
+            clearHeartbeat()
+
+
+            // 通知渲染进程连接已断开
+
+
+            if (win && !win.isDestroyed()) {
+
+
+                win.webContents.send('ws-status', {connected: false});
+
+
+                // 同时更新tray tooltip
+
+
+                const baseTooltip = `电子课表 - by KuoHu - ${app.getVersion()}`
+
+
+                win.webContents.send('update-tray-status', {connected: false, status: '离线(弱网)'});
+
+
+            }
+
+
+            if (rejectUnauthorized) {
+
+                // 尝试连接不验证证书
+
+                console.log('Trying to connect without certificate verification...');
+
+                setTimeout(() => {
+
+                    connect(false, false);
+
+                }, 100);
+
+            } else {
+
+                // 已经尝试了不验证证书，现在安排重连
+
+                scheduleReconnect();
+
+            }
+
+        })
+
     } catch (err) {
+
         console.error('WebSocket create error:', err)
+
         // 不显示错误弹窗，仅重连
+
         scheduleReconnect();
+
         return
+
     }
 
+
     ws.on('open', () => {
+
         console.log('Connected to server')
+
         clearHeartbeat()
+
         reconnectAttempts = 0; // 连接成功，重置重连计数
 
+
         heartbeatTimer = setInterval(() => {
+
             if (ws && ws.readyState === WebSocket.OPEN) {
+
                 try {
+
                     ws.ping()
+
                 } catch (e) {
+
                     console.log('Heartbeat ping failed:', e?.message || e)
+
                 }
+
                 console.log('Heartbeat sent')
+
             } else {
+
                 console.log('Disconnected from server, No heartbeat sent')
+
             }
+
         }, 25000)
 
+
         // 重连成功后，主动拉取一次课表，避免丢失推送
+
         try {
+
             getScheduleFromCloud()
+
         } catch (e) {
+
             console.error('Failed to get schedule after reconnect:', e)
+
         }
+
 
         // 通知渲染进程连接已恢复
+
+
         if (win && !win.isDestroyed()) {
+
+
             win.webContents.send('ws-status', {connected: true});
+
+
+            // 同时更新tray tooltip
+
+
+            win.webContents.send('update-tray-status', {connected: true, status: '在线'});
+
+
         }
+
     })
+
 
     // 处理接收到的消息
+
     ws.on('message', (message) => {
+
         const text = message?.toString?.() ?? ''
+
         console.log('Received from server:', text)
+
         if (text === 'SyncConfig') {
+
             console.log('SyncConfig')
+
             getScheduleFromCloud()
+
         }
+
     })
+
 
     // 处理连接关闭
+
     ws.on('close', (code, reason) => {
+
         console.log(`WebSocket disconnected (code: ${code}, reason: ${reason})`)
+
         clearHeartbeat()
 
+
         // 通知渲染进程连接已断开
+
         if (win && !win.isDestroyed()) {
+
             win.webContents.send('ws-status', {connected: false});
+
         }
+
 
         // 无条件进行重连，不区分关闭原因
+
         scheduleReconnect();
-    })
 
-    // 处理错误
-    ws.on('error', (error) => {
-        console.error('WebSocket error:', error)
-        clearHeartbeat()
-
-        // 通知渲染进程连接已断开
-        if (win && !win.isDestroyed()) {
-            win.webContents.send('ws-status', {connected: false});
-        }
-
-        if (rejectUnauthorized) {
-            // 尝试连接不验证证书
-            console.log('Trying to connect without certificate verification...');
-            setTimeout(() => {
-                connect(false, false);
-            }, 100);
-        } else {
-            // 已经尝试了不验证证书，现在安排重连
-            scheduleReconnect();
-        }
     })
 }
 connect();
@@ -711,6 +826,16 @@ ipcMain.on('RequestSyncConfig', () => {
         request.on('error', (err) => console.error('Broadcast request error:', err))
         request.end()
     })
+})
+
+// 处理来自渲染进程的tray状态更新请求
+ipcMain.on('update-tray-status', (e, arg) => {
+    if (tray) {
+        const baseTooltip = `电子课表 - by KuoHu - ${app.getVersion()}`
+        const statusText = arg.connected ? '在线' : '离线(弱网)'
+        tray.setToolTip(`${baseTooltip} - 状态: ${statusText}`)
+        console.log('[Main] Tray tooltip updated to:', `${baseTooltip} - 状态: ${statusText}`)
+    }
 })
 
 ipcMain.on('getTimeOffset', (e, arg) => {
