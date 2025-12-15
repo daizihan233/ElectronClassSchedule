@@ -784,6 +784,30 @@ ipcRenderer.on('broadcastSyncConfig', () => {
     ipcRenderer.send('RequestSyncConfig', false)
 })
 
+// WebSocket连接状态处理
+let wsConnected = true; // 默认为连接状态
+let connectionStatusTimeout = null;
+
+ipcRenderer.on('ws-status', (e, arg) => {
+    const wasConnected = wsConnected;
+    wsConnected = arg.connected;
+
+    console.log('[Renderer] WebSocket status changed:', wsConnected);
+
+    // 如果是连接状态变化，更新UI提示
+    if (wasConnected !== wsConnected) {
+        if (!wsConnected) {
+            // 连接断开，显示提示
+            console.log('[Renderer] WebSocket disconnected, showing status...');
+            // 可以选择在UI上显示连接状态，但不弹窗
+            // 例如：更新某个状态指示器
+        } else {
+            // 连接恢复，清除提示
+            console.log('[Renderer] WebSocket reconnected');
+        }
+    }
+});
+
 // 辅助：确保 banner 高度可见
 function ensureBannerHeight(){
     if (!root) return; // 未初始化时跳过
