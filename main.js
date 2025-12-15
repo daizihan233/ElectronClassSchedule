@@ -20,9 +20,9 @@ const asset = (...p) => path.join(__dirname, ...p)
 function stripJsonComments(str) {
     try {
         // 去掉块注释
-        str = str.replace(/\/\*[\s\S]*?\*\//g, '');
+        str = str.replaceAll(/\/\*[\s\S]*?\*\//g, '');
         // 去掉行注释（忽略字符串内 // 的复杂情况，这里假设用户配置较为简单）
-        str = str.replace(/^\s*\/\/.*$/gm, '');
+        str = str.replaceAll(/^\s*\/\/.*$/gm, '');
         return str;
     } catch {
         return str
@@ -79,50 +79,86 @@ function clearHeartbeat() {
         heartbeatTimer = null
     }
 }
-function scheduleReconnect(delayMs = 5000) {
+
+let reconnectAttempts = 0;
+const MAX_RECONNECT_DELAY = 30000; // 最大重连延迟30秒
+const INITIAL_RECONNECT_DELAY = 1000; // 初始重连延迟1秒
+
+function scheduleReconnect() {
     if (reconnectTimer) {
-        clearTimeout(reconnectTimer)
-        reconnectTimer = null
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
     }
+
+    // 指数退避算法，最大延迟30秒
+    const delay = Math.min(INITIAL_RECONNECT_DELAY * Math.pow(2, reconnectAttempts), MAX_RECONNECT_DELAY);
+    reconnectAttempts++;
+
+    console.log(`WebSocket will reconnect in ${delay}ms (attempt ${reconnectAttempts})`);
+
     reconnectTimer = setTimeout(() => {
-        reconnectTimer = null
-        connect()
-    }, delayMs)
+        reconnectTimer = null;
+        connect(true, true); // 重置errorFlag为true，从验证证书开始
+    }, delay);
 }
-function connect(rejectUnauthorized = true) {
-    let errorFlag = false;
+
+function connect(rejectUnauthorized = true, resetErrorFlag = false) {
+    // 只有在需要重置时才重置errorFlag
+    if (resetErrorFlag) {
+        reconnectAttempts = 0;
+    }
+
     const { agreementWs } = getProtocols()
     const server = getServer()
     const url = `${agreementWs}://${server}/ws/${classId}`
 
     try {
         // 关闭旧连接与心跳
-        try { ws?.removeAllListeners() } catch {}
-        try { ws?.close() } catch {}
+        try {
+            if (ws) {
+                ws.removeAllListeners();
+                ws.close();
+            }
+        } catch {
+        }
         clearHeartbeat()
 
         ws = new WebSocket(url, [], { rejectUnauthorized })
     } catch (err) {
         console.error('WebSocket create error:', err)
-        scheduleReconnect()
+        // 不显示错误弹窗，仅重连
+        scheduleReconnect();
         return
     }
 
     ws.on('open', () => {
         console.log('Connected to server')
         clearHeartbeat()
+        reconnectAttempts = 0; // 连接成功，重置重连计数
+
         heartbeatTimer = setInterval(() => {
             if (ws && ws.readyState === WebSocket.OPEN) {
-                try { ws.ping() } catch (e) { console.log('Heartbeat ping failed:', e?.message || e) }
+                try {
+                    ws.ping()
+                } catch (e) {
+                    console.log('Heartbeat ping failed:', e?.message || e)
+                }
                 console.log('Heartbeat sent')
             } else {
                 console.log('Disconnected from server, No heartbeat sent')
             }
         }, 25000)
+
         // 重连成功后，主动拉取一次课表，避免丢失推送
         try {
             getScheduleFromCloud()
-        } catch {
+        } catch (e) {
+            console.error('Failed to get schedule after reconnect:', e)
+        }
+
+        // 通知渲染进程连接已恢复
+        if (win && !win.isDestroyed()) {
+            win.webContents.send('ws-status', {connected: true});
         }
     })
 
@@ -137,24 +173,38 @@ function connect(rejectUnauthorized = true) {
     })
 
     // 处理连接关闭
-    ws.on('close', () => {
-        console.log('Disconnected from server')
+    ws.on('close', (code, reason) => {
+        console.log(`WebSocket disconnected (code: ${code}, reason: ${reason})`)
         clearHeartbeat()
-        // 与原逻辑一致：若非 error 触发，或当前为不验证证书的连接，均进行重连
-        if (!errorFlag || !rejectUnauthorized) {
-            scheduleReconnect()
+
+        // 通知渲染进程连接已断开
+        if (win && !win.isDestroyed()) {
+            win.webContents.send('ws-status', {connected: false});
         }
+
+        // 无条件进行重连，不区分关闭原因
+        scheduleReconnect();
     })
 
     // 处理错误
     ws.on('error', (error) => {
-        errorFlag = true;
-        console.error('WebSocket error:', error, ', try to connect without verifying the certificate')
+        console.error('WebSocket error:', error)
         clearHeartbeat()
+
+        // 通知渲染进程连接已断开
+        if (win && !win.isDestroyed()) {
+            win.webContents.send('ws-status', {connected: false});
+        }
+
         if (rejectUnauthorized) {
             // 尝试连接不验证证书
-            scheduleReconnect(0)
-            connect(false)
+            console.log('Trying to connect without certificate verification...');
+            setTimeout(() => {
+                connect(false, false);
+            }, 100);
+        } else {
+            // 已经尝试了不验证证书，现在安排重连
+            scheduleReconnect();
         }
     })
 }
@@ -290,12 +340,14 @@ function getScheduleFromCloud() {
                 if (win && !win.isDestroyed()) win.webContents.send('newConfig', scheduleConfigSync)
             } catch (err) {
                 console.error('getScheduleFromCloud JSON parse error:', err)
+                // 不显示错误弹窗，仅记录错误
             }
             console.log('No more data in response.')
         })
     })
     request.on('error', (err) => {
         console.error('getScheduleFromCloud request error:', err)
+        // 不显示错误弹窗，仅记录错误
     })
     request.end()
 }
@@ -598,16 +650,19 @@ ipcMain.on('getWeather', () => {
                     if (win && !win.isDestroyed()) win.webContents.send('setWeather', weatherData)
                 } catch (e) {
                     console.error('Weather JSON parse error:', e)
+                    // 不显示错误弹窗，仅记录错误并重试
                     setTimeout(() => win?.webContents?.send('updateWeather'), 5000)
                 }
             } else {
                 console.log(`Weather API non-2xx: ${status}, retry later`)
+                // 不显示错误弹窗，仅记录错误并重试
                 setTimeout(() => win?.webContents?.send('updateWeather'), 5000)
             }
         })
     })
     request.on('error', (error) => {
         console.error('Weather API error:', error, 'retry later')
+        // 不显示错误弹窗，仅记录错误并重试
         setTimeout(() => win?.webContents?.send('updateWeather'), 5000)
     })
     request.end()
