@@ -561,7 +561,7 @@ app.whenReady().then(() => {
     })
 
     // 根据配置显示或隐藏解冻窗口
-    if (store.get('isUnfreezeEnabled', true)) {
+    if (store.get('isUnfreezeEnabled', false)) {
         setTimeout(() => {
             if (unfreezeWin && !unfreezeWin.isDestroyed()) {
                 unfreezeWin.show();
@@ -785,7 +785,7 @@ ipcMain.on('getWeekIndex', (e, arg) => {
         {
             label: '解冻动画',
             type: 'checkbox',
-            checked: store.get('isUnfreezeEnabled', true),
+            checked: store.get('isUnfreezeEnabled', false),
             click: (e) => {
                 store.set('isUnfreezeEnabled', e.checked)
                 toggleUnfreezeWindow(e.checked)
