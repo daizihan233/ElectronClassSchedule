@@ -71,7 +71,8 @@ let lastScheduleData = {
     },
     scheduleArray: [null, null, null],
     timetable: null,
-    divider: [null, null]
+    divider: [null, null],
+    nextScheduleName: null
 }
 
 // 解析 YYYY-MM-DD（或 YYYY-M-D）为本地时区日期（00:00），避免被当作 UTC 解析
@@ -336,8 +337,8 @@ function setCountdownerContent() {
         miniCountdown.style.display = 'block'
         if (globalContainer) globalContainer.style.display = 'none'
         const currentClassColor = wsConnected ? 'rgba(255, 255, 5, 1)' : 'rgba(255, 165, 0, 1)';
-        const nextClass = scheduleData.currentHighlight.fullName || '课间';
-        miniCountdown.innerHTML = `<div class="currentClass" style="color: ${currentClassColor}">${nextClass}</div><div class="countdown" style="margin-left:5px">${scheduleData.currentHighlight.countdownText}</div>`
+        const nextClass = scheduleData.nextScheduleName || '明天';
+        miniCountdown.innerHTML = `<div class="currentClass" style="color: ${currentClassColor}">${scheduleData.currentHighlight.fullName}</div><div class="countdown" style="margin-left:5px">${scheduleData.currentHighlight.countdownText}</div> | 下一节：<span class="class upcoming" id="highlighted">${nextClass}</span>`
     } else {
         countdownContainer.style.display = 'block';
         miniCountdown.style.display = 'none'

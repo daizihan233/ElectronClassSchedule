@@ -57,7 +57,7 @@ function init() {
 }
 
 // 页面加载完成后初始化
-window.addEventListener('DOMContentLoaded', init);
+globalThis.addEventListener('DOMContentLoaded', init);
 
 // 监听来自主进程的配置更新
 ipcRenderer.on('update-unfreeze-config', (e, config) => {
