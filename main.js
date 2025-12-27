@@ -374,6 +374,14 @@ const createWindow = () => {
     win.loadFile('index.html')
     if (store.get('isWindowAlwaysOnTop', true))
         win.setAlwaysOnTop(true, 'screen-saver', 9999999999999)
+
+    // 监听主窗口关闭事件，确保解冻窗口也被关闭
+    win.on('close', () => {
+        console.log('[Main] Main window closing, destroying unfreeze window');
+        if (unfreezeWin && !unfreezeWin.isDestroyed()) {
+            unfreezeWin.destroy();
+        }
+    });
 }
 
 // 创建刘德华解冻动画窗口
@@ -393,7 +401,7 @@ const createUnfreezeWindow = () => {
         resizable: false,
         minimizable: false,
         maximizable: false,
-        closable: false,
+        closable: true, // 允许关闭
         show: false, // 初始隐藏
         webPreferences: {
             nodeIntegration: true,
@@ -569,16 +577,22 @@ app.whenReady().then(() => {
 app.on('will-quit', () => {
     stopFullscreenMonitoring();
     // 关闭解冻窗口
-    if (unfreezeWin && !unfreezeWin.isDestroyed()) {
-        unfreezeWin.close();
-    }
+    unfreezeWin.quit();
 })
 
 app.on('quit', () => {
     stopFullscreenMonitoring();
     // 关闭解冻窗口
     if (unfreezeWin && !unfreezeWin.isDestroyed()) {
-        unfreezeWin.close();
+        unfreezeWin.quit();
+    }
+})
+
+// 监听主窗口关闭事件，确保解冻窗口也被关闭
+app.on('window-all-closed', () => {
+    // 关闭解冻窗口
+    if (unfreezeWin && !unfreezeWin.isDestroyed()) {
+        unfreezeWin.quit();
     }
 })
 
