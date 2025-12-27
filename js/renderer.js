@@ -827,9 +827,6 @@ ipcRenderer.on('foreground-fullscreen-changed', (e, arg) => {
 // 根据前台窗口全屏状态更新 UI
 function updateUIForFullscreenStatus(isFullscreen) {
     // TODO: 在此处实现 UI 调整逻辑
-    // 例如：
-    // - 全屏时隐藏某些元素
-    // - 非全屏时显示完整信息
     console.log('[Renderer] Updating UI for fullscreen status:', isFullscreen);
 }
 
