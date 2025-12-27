@@ -289,8 +289,11 @@ function setScheduleClass() {
 function setBackgroundDisplay() {
     let elements = document.getElementsByClassName('background')
     let element;
+    // 如果是当前课程且开启了隐藏，或者前台有窗口且是休息时间，则隐藏背景
+    const shouldHide = (scheduleData.currentHighlight.type === 'current' && isClassHidden) ||
+        (isForegroundFullscreen && scheduleData.currentHighlight.type !== 'current');
     for (element of elements) {
-        element.style.visibility = (scheduleData.currentHighlight.type === 'current' && isClassHidden) ? 'hidden' : 'visible'
+        element.style.visibility = shouldHide ? 'hidden' : 'visible'
     }
 }
 
@@ -305,11 +308,15 @@ function setCountdownerContent() {
         currentFullName.style.color = 'rgba(255, 255, 5, 1)';
     }
     countdownText.innerText = scheduleData.currentHighlight.countdownText;
+
+    const globalContainer = document.getElementById('globalContainer');
+
     if (scheduleData.currentHighlight.type === 'current') {
         if (isClassCountdown) {
             if (isClassHidden) { // 上课 并且开启了倒计时 并且 隐藏主体 -> 显示小窗口
                 countdownContainer.style.display = 'none'
                 miniCountdown.style.display = 'block'
+                if (globalContainer) globalContainer.style.display = 'none'
                 // 仅渲染文本，避免对 currentFullName.innerText 的副作用
                 // 根据网络连接状态设置currentClass的颜色
                 const currentClassColor = wsConnected ? 'rgba(0, 255, 10, 1)' : 'rgba(255, 165, 0, 1)';
@@ -317,36 +324,33 @@ function setCountdownerContent() {
             } else { // 上课 并且开启了倒计时 并且 不隐藏主体 -> 正常计时
                 countdownContainer.style.display = 'block'
                 miniCountdown.style.display = 'none'
+                if (globalContainer) globalContainer.style.display = 'block'
             }
         } else { // 上课 并且关闭了倒计时 -> 都不显示
             countdownContainer.style.display = 'none'
             miniCountdown.style.display = 'none'
+            if (globalContainer) globalContainer.style.display = 'none'
         }
-    }
-    else { // 下课正常显示
+    } else if (isForegroundFullscreen) {
+        countdownContainer.style.display = 'none'
+        miniCountdown.style.display = 'block'
+        if (globalContainer) globalContainer.style.display = 'none'
+        const currentClassColor = wsConnected ? 'rgba(255, 255, 5, 1)' : 'rgba(255, 165, 0, 1)';
+        const nextClass = scheduleData.currentHighlight.fullName || '课间';
+        miniCountdown.innerHTML = `<div class="currentClass" style="color: ${currentClassColor}">${nextClass}</div><div class="countdown" style="margin-left:5px">${scheduleData.currentHighlight.countdownText}</div>`
+    } else {
         countdownContainer.style.display = 'block';
         miniCountdown.style.display = 'none'
+        if (globalContainer) globalContainer.style.display = 'block'
     }
 }
 
 function setCountdownerPosition() {
     let offset = {};
-    const centerFontSize = Number(getComputedStyle(root).getPropertyValue('--center-font-size').replace('px', ''));
-    const mainHorizontalSpace = Number(getComputedStyle(root).getPropertyValue('--main-horizontal-space').replace('px', ''));
     const dividerWidth = Number(getComputedStyle(root).getPropertyValue('--divider-width').replace('px', ''));
     const dividerMargin = Number(getComputedStyle(root).getPropertyValue('--divider-margin').replace('px', ''));
     if (countdownContainer.style.display !== 'none')
         cacheCountdownContainerOffsetWidth = countdownContainer.offsetWidth
-    if (scheduleData.currentHighlight.fullName === "家长会") {
-        offset = {
-            x: classContainer.offsetWidth / 2 - cacheCountdownContainerOffsetWidth / 4 - centerFontSize - mainHorizontalSpace * 2,
-            y: classContainer.offsetHeight
-        };
-        countdownContainer.style.left = offset.x + 'px';
-        countdownContainer.style.top = offset.y + 'px';
-        return;
-    }
-
     let highlightElement = document.getElementById('highlighted');
     if (!highlightElement) return;
 
@@ -826,8 +830,9 @@ ipcRenderer.on('foreground-fullscreen-changed', (e, arg) => {
 
 // 根据前台窗口全屏状态更新 UI
 function updateUIForFullscreenStatus(isFullscreen) {
-    // TODO: 在此处实现 UI 调整逻辑
     console.log('[Renderer] Updating UI for fullscreen status:', isFullscreen);
+    // 状态变化时刷新 UI
+    tick(true);
 }
 
 
