@@ -34,7 +34,8 @@
     "productName": "电子课表",
     "asar": true,
     "asarUnpack": [
-      "js/scheduleConfig.js"
+      "js/scheduleConfig.js",
+      "scripts/**/*"
     ],
     "directories": {
       "buildResources": "build-resources"

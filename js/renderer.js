@@ -255,7 +255,7 @@ function initBannerMarquee() {
     }
 }
 
-function changeScheduleClass(classHtml) {
+function changeScheduleClass(classHtml, inner) {
     if (scheduleData.currentHighlight.isEnd)
         classHtml += `<div class="class" id="highlighted" style="color:rgba(166,166,166);">${inner}</div>`
     else if (scheduleData.currentHighlight.type === 'current')
@@ -272,7 +272,7 @@ function setScheduleClass() {
     for (let i = 0; i < scheduleData.scheduleArray.length; i++) {
         let inner = scheduleData.scheduleArray[i]
         if (scheduleData.currentHighlight.index === i) {
-            classHtml = changeScheduleClass(classHtml)
+            classHtml = changeScheduleClass(classHtml, inner)
         } else if (scheduleData.currentHighlight.index > i)
             classHtml += `<div class="class" style="color:rgba(166,166,166);">${inner}</div>`
         else
@@ -809,6 +809,29 @@ ipcRenderer.on('broadcastSyncConfig', () => {
 
 // WebSocket连接状态处理
 let wsConnected = true; // 默认为连接状态
+
+// 前台窗口全屏状态处理
+let isForegroundFullscreen = false; // 默认为非全屏状态
+
+ipcRenderer.on('foreground-fullscreen-changed', (e, arg) => {
+    const wasFullscreen = isForegroundFullscreen;
+    isForegroundFullscreen = arg.isFullscreen;
+
+    console.log('[Renderer] Foreground fullscreen status changed:', isForegroundFullscreen);
+
+    // 当状态变化时，可以在此处调整 UI 显示
+    // 比如全屏时显示简略信息，非全屏时显示详细信息
+    updateUIForFullscreenStatus(isForegroundFullscreen);
+});
+
+// 根据前台窗口全屏状态更新 UI
+function updateUIForFullscreenStatus(isFullscreen) {
+    // TODO: 在此处实现 UI 调整逻辑
+    // 例如：
+    // - 全屏时隐藏某些元素
+    // - 非全屏时显示完整信息
+    console.log('[Renderer] Updating UI for fullscreen status:', isFullscreen);
+}
 
 
 ipcRenderer.on('ws-status', (e, arg) => {
