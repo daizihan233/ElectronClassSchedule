@@ -74,19 +74,9 @@
     color: rgba(0, 255, 10, 1);
 }
 
-.current.disconnected {
-    color: rgba(255, 165, 0, 1); /* 橙色表示断开连接 */
-}
-
 .upcoming {
     color: rgba(0, 255, 10, 1);
     animation: highlightUpcoming 1.5s;
-    animation-iteration-count: infinite;
-}
-
-.upcoming.disconnected {
-    color: rgba(255, 165, 0, 1); /* 橙色表示断开连接 */
-    animation: highlightUpcomingDisconnected 1.5s;
     animation-iteration-count: infinite;
 }
 
@@ -135,12 +125,6 @@
 }
 
 /*noinspection CssUnresolvedCustomProperty*/
-.weatherSidebar {
-    right: 0;
-    left: 0;
-    color: #FF3a3a;
-    transform: translateX(calc(100% + var(--container-space)));
-}
 
 /*noinspection CssUnresolvedCustomProperty*/
 .leftSidebar {
@@ -257,17 +241,5 @@
 }
 
 /* 短文本静止时剧中显示 */
-#bannerText.centered {
-    text-align: center;
-}
 
 /* --- 跑马灯 polyfill 轨道样式 --- */
-#bannerText .marquee-track {
-    display: inline-block;
-    white-space: nowrap; /* 单行滚动 */
-    will-change: transform; /* 优化平移动画 */
-}
-#bannerText .marquee-seg,
-#bannerText .marquee-gap {
-    display: inline-block;
-}

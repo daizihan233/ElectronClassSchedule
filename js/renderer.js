@@ -255,22 +255,24 @@ function initBannerMarquee() {
     }
 }
 
+function changeScheduleClass(classHtml) {
+    if (scheduleData.currentHighlight.isEnd)
+        classHtml += `<div class="class" id="highlighted" style="color:rgba(166,166,166);">${inner}</div>`
+    else if (scheduleData.currentHighlight.type === 'current')
+        // 根据网络连接状态设置当前课程的类
+        classHtml += `<div class="class current ${wsConnected ? '' : 'disconnected'}" id="highlighted">${inner}</div>`
+    else if (scheduleData.currentHighlight.type === 'upcoming')
+        // 根据网络连接状态设置即将到来课程的类
+        classHtml += `<div class="class upcoming ${wsConnected ? '' : 'disconnected'}" id="highlighted">${inner}</div>`
+    return classHtml
+}
+
 function setScheduleClass() {
     let classHtml = '';
     for (let i = 0; i < scheduleData.scheduleArray.length; i++) {
         let inner = scheduleData.scheduleArray[i]
-        if (scheduleData.scheduleArray[i].includes('@')) {
-            inner = `<div><div style="display:inline">${inner.split('@')[0]}</div><div class="subClass">${inner.split('@')[1]}</div></div>`
-        }
         if (scheduleData.currentHighlight.index === i) {
-            if (scheduleData.currentHighlight.isEnd)
-                classHtml += `<div class="class" id="highlighted" style="color:rgba(166,166,166);">${inner}</div>`
-            else if (scheduleData.currentHighlight.type === 'current')
-                // 根据网络连接状态设置当前课程的类
-                classHtml += `<div class="class current ${!wsConnected ? 'disconnected' : ''}" id="highlighted">${inner}</div>`
-            else if (scheduleData.currentHighlight.type === 'upcoming')
-                // 根据网络连接状态设置即将到来课程的类
-                classHtml += `<div class="class upcoming ${!wsConnected ? 'disconnected' : ''}" id="highlighted">${inner}</div>`
+            classHtml = changeScheduleClass(classHtml)
         } else if (scheduleData.currentHighlight.index > i)
             classHtml += `<div class="class" style="color:rgba(166,166,166);">${inner}</div>`
         else
@@ -418,12 +420,10 @@ function tick(reset = false) {
         setCountdownerPosition()
         setSidebar()
         setBackgroundDisplay()
-    } else {
+    } else if (lastScheduleData.wsConnected !== wsConnected) {
         // 即使没有课程变化，如果连接状态变化，也需要更新颜色
-        if (lastScheduleData.wsConnected !== wsConnected) {
-            updateClassHighlightColors(wsConnected);
-            updateUIColorsForConnectionStatus(wsConnected);
-        }
+        updateClassHighlightColors(wsConnected);
+        updateUIColorsForConnectionStatus(wsConnected);
     }
     // noinspection JSUnresolvedReference
     lastScheduleData = $.extend(true, {}, scheduleData);
@@ -809,7 +809,7 @@ ipcRenderer.on('broadcastSyncConfig', () => {
 
 // WebSocket连接状态处理
 let wsConnected = true; // 默认为连接状态
-let connectionStatusTimeout = null;
+
 
 ipcRenderer.on('ws-status', (e, arg) => {
     const wasConnected = wsConnected;
@@ -819,14 +819,14 @@ ipcRenderer.on('ws-status', (e, arg) => {
 
     // 如果是连接状态变化，更新UI状态
     if (wasConnected !== wsConnected) {
-        if (!wsConnected) {
-            // 连接断开，更新UI颜色为橙色
-            console.log('[Renderer] WebSocket disconnected, updating UI to show warning state');
-            updateUIColorsForConnectionStatus(false);
-        } else {
+        if (wsConnected) {
             // 连接恢复，更新UI颜色为绿色
             console.log('[Renderer] WebSocket reconnected, updating UI to show connected state');
             updateUIColorsForConnectionStatus(true);
+        } else {
+            // 连接断开，更新UI颜色为橙色
+            console.log('[Renderer] WebSocket disconnected, updating UI to show warning state');
+            updateUIColorsForConnectionStatus(false);
         }
     }
 });
@@ -877,12 +877,7 @@ function updateClassHighlightColors(connected) {
         console.log('[Renderer] Set current class color to', connected ? 'green' : 'orange');
     } else if (highlightedElement.classList.contains('upcoming')) {
         // 对于即将到来的课程，根据连接状态设置颜色和动画
-        if (!connected) {
-            // 添加disconnected类以使用橙色闪烁动画
-            highlightedElement.classList.add('disconnected');
-            highlightedElement.style.color = 'rgba(255, 165, 0, 1)';
-            console.log('[Renderer] Set upcoming class to disconnected state with orange animation');
-        } else {
+        if (connected) {
             // 移除disconnected类以使用绿色闪烁动画
             highlightedElement.classList.remove('disconnected');
             highlightedElement.style.color = 'rgba(0, 255, 10, 1)';
@@ -891,6 +886,11 @@ function updateClassHighlightColors(connected) {
             void highlightedElement.offsetWidth; // 强制重排以重新启动动画
             highlightedElement.classList.add('upcoming');
             console.log('[Renderer] Set upcoming class to connected state with green animation');
+        } else {
+            // 添加disconnected类以使用橙色闪烁动画
+            highlightedElement.classList.add('disconnected');
+            highlightedElement.style.color = 'rgba(255, 165, 0, 1)';
+            console.log('[Renderer] Set upcoming class to disconnected state with orange animation');
         }
     }
 
@@ -899,14 +899,6 @@ function updateClassHighlightColors(connected) {
 }
 
 // 更新ToolTip显示连接状态
-function updateTrayTooltip() {
-    // 获取当前应用版本
-    // 由于无法直接从渲染进程中获取版本，我们可以通过IPC向主进程请求
-    // 暂时显示连接状态信息
-    const statusText = wsConnected ? '已连接' : '连接断开';
-    // 我们需要通过IPC向主进程发送当前网络状态，以便更新tray tooltip
-    ipcRenderer.send('update-tray-status', {connected: wsConnected, status: statusText});
-}
 
 // 处理从主进程发送的tray状态更新事件
 ipcRenderer.on('update-tray-status', (e, arg) => {
