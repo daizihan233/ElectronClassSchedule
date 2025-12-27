@@ -167,11 +167,6 @@ function connect(rejectUnauthorized = true, resetErrorFlag = false) {
 
 
                 // 同时更新tray tooltip
-
-
-                const baseTooltip = `电子课表 - by KuoHu - ${app.getVersion()}`
-
-
                 win.webContents.send('update-tray-status', {connected: false, status: '离线(弱网)'});
 
 
