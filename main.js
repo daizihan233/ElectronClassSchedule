@@ -568,10 +568,18 @@ app.whenReady().then(() => {
 // 应用退出时停止监听
 app.on('will-quit', () => {
     stopFullscreenMonitoring();
+    // 关闭解冻窗口
+    if (unfreezeWin && !unfreezeWin.isDestroyed()) {
+        unfreezeWin.close();
+    }
 })
 
 app.on('quit', () => {
     stopFullscreenMonitoring();
+    // 关闭解冻窗口
+    if (unfreezeWin && !unfreezeWin.isDestroyed()) {
+        unfreezeWin.close();
+    }
 })
 
 // 仅提供读取用户配置的 IPC
