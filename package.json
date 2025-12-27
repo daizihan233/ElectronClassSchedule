@@ -35,7 +35,9 @@
     "asar": true,
     "asarUnpack": [
       "js/scheduleConfig.js",
-      "scripts/**/*"
+      "scripts/**/*",
+      "unfreeze.html",
+      "unfreeze.config.js"
     ],
     "directories": {
       "buildResources": "build-resources"

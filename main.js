@@ -375,6 +375,63 @@ const createWindow = () => {
     if (store.get('isWindowAlwaysOnTop', true))
         win.setAlwaysOnTop(true, 'screen-saver', 9999999999999)
 }
+
+// 创建刘德华解冻动画窗口
+let unfreezeWin = null;
+
+const createUnfreezeWindow = () => {
+    // noinspection JSCheckFunctionSignatures
+    unfreezeWin = new BrowserWindow({
+        width: 300,
+        height: 300,
+        x: undefined, // 自动计算右下角位置
+        y: undefined,
+        frame: false,
+        transparent: true,
+        alwaysOnTop: false, // 置底，不置顶
+        skipTaskbar: true, // 不在任务栏显示
+        resizable: false,
+        minimizable: false,
+        maximizable: false,
+        closable: false,
+        show: false, // 初始隐藏
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false,
+            enableRemoteModule: true
+        },
+    });
+
+    // 计算右下角位置
+    const {width, height} = screen.getPrimaryDisplay().workAreaSize;
+    unfreezeWin.setPosition(width - 300, height - 300);
+
+    // 设置窗口为置底
+    unfreezeWin.setAlwaysOnTop(false, 'desktop');
+
+    // noinspection JSIgnoredPromiseFromCall
+    unfreezeWin.loadFile('unfreeze.html');
+
+    // unfreezeWin.webContents.openDevTools();
+
+    console.log('[Unfreeze] Window created at bottom-right corner');
+};
+
+// 切换解冻窗口的显示/隐藏
+const toggleUnfreezeWindow = (show) => {
+    if (!unfreezeWin) {
+        console.warn('[Unfreeze] Window not initialized');
+        return;
+    }
+
+    if (show) {
+        unfreezeWin.show();
+        console.log('[Unfreeze] Window shown');
+    } else {
+        unfreezeWin.hide();
+        console.log('[Unfreeze] Window hidden');
+    }
+};
 function setAutoLaunch() {
     const shortcutName = '电子课表(请勿重命名).lnk'
     app.setLoginItemSettings({ // backward compatible
@@ -476,6 +533,7 @@ function getScheduleFromCloud() {
 }
 app.whenReady().then(() => {
     createWindow()
+    createUnfreezeWindow() // 创建刘德华解冻动画窗口
     Menu.setApplicationMenu(null)
     setupAutoUpdater()
     win.webContents.on('did-finish-load', () => {
@@ -493,6 +551,15 @@ app.whenReady().then(() => {
     electron.powerMonitor.on('shutdown', () => {
         app.quit()
     })
+
+    // 根据配置显示或隐藏解冻窗口
+    if (store.get('isUnfreezeEnabled', true)) {
+        setTimeout(() => {
+            if (unfreezeWin && !unfreezeWin.isDestroyed()) {
+                unfreezeWin.show();
+            }
+        }, 1000); // 延迟 1 秒显示，确保窗口创建完成
+    }
     const handle = win.getNativeWindowHandle();
     try { DisableMinimize(handle) } catch (e) { console.warn('DisableMinimize failed:', e?.message || e) }
     setAutoLaunch()
@@ -691,6 +758,15 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             click: (e) => {
                 store.set('isDuringClassHidden', e.checked)
                 win.webContents.send('ClassHidden', e.checked)
+            }
+        },
+        {
+            label: '解冻动画',
+            type: 'checkbox',
+            checked: store.get('isUnfreezeEnabled', true),
+            click: (e) => {
+                store.set('isUnfreezeEnabled', e.checked)
+                toggleUnfreezeWindow(e.checked)
             }
         },
         {
