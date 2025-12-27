@@ -10,6 +10,119 @@ const Store = require('electron-store');
 const { DisableMinimize } = require('electron-disable-minimize');
 const store = new Store();
 
+// Windows API 调用 - 用于检测前台窗口是否全屏或最大化
+// 兼容 Windows 7 及以上版本
+// 返回 Promise，避免阻塞主进程
+const isForegroundWindowFullscreenOrMaximized = () => {
+    return new Promise((resolve) => {
+        const {exec} = require('child_process');
+        const psScriptPath = path.join(__dirname, 'scripts', 'check-foreground-fullscreen.ps1');
+
+        // 检查脚本文件是否存在
+        if (!fs.existsSync(psScriptPath)) {
+            console.error('[FullscreenDetection] PowerShell script not found:', psScriptPath);
+            resolve(false);
+            return;
+        }
+
+        // 异步调用独立的 PowerShell 脚本文件
+        const child = exec(`powershell -NoProfile -ExecutionPolicy Bypass -File "${psScriptPath}"`, {
+            encoding: 'utf8',
+            timeout: 5000 // 5秒超时，避免卡死
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        child.stdout.on('data', (data) => {
+            stdout += data.toString();
+        });
+
+        child.stderr.on('data', (data) => {
+            stderr += data.toString();
+        });
+
+        child.on('close', (code) => {
+            const result = stdout.trim();
+
+            if (code !== 0 || result === 'ERROR') {
+                console.log('[FullscreenDetection] Failed to get foreground window info, code:', code, 'stderr:', stderr);
+                resolve(false);
+                return;
+            }
+
+            const isFullscreen = !result.includes('False');
+            console.log(`[FullscreenDetection] Foreground window is fullscreen: ${isFullscreen}`);
+            resolve(isFullscreen);
+        });
+
+        child.on('error', (error) => {
+            console.error('[FullscreenDetection] Error:', error.message);
+            resolve(false);
+        });
+    });
+};
+
+// 实时监听前台窗口全屏状态
+let isForegroundFullscreen = false;
+let fullscreenCheckTimer = null;
+let isMonitoring = false;
+const FULLSCREEN_CHECK_INTERVAL = 2000; // 每 2000ms (2秒) 检查一次，降低频率以减少性能影响
+
+async function checkFullscreenStatus() {
+    if (!isMonitoring) return;
+
+    try {
+        const currentStatus = await isForegroundWindowFullscreenOrMaximized();
+
+        // 只在状态变化时通知渲染进程
+        if (currentStatus !== isForegroundFullscreen) {
+            isForegroundFullscreen = currentStatus;
+            console.log(`[FullscreenMonitoring] Status changed to: ${isForegroundFullscreen}`);
+
+            if (win && !win.isDestroyed()) {
+                win.webContents.send('foreground-fullscreen-changed', {
+                    isFullscreen: isForegroundFullscreen
+                });
+            }
+        }
+    } catch (error) {
+        console.error('[FullscreenMonitoring] Error:', error.message);
+    }
+
+    // 递归调用，确保上一次检查完成后再开始下一次
+    if (isMonitoring) {
+        fullscreenCheckTimer = setTimeout(checkFullscreenStatus, FULLSCREEN_CHECK_INTERVAL);
+    }
+}
+
+async function startFullscreenMonitoring() {
+    // 停止之前的监听
+    stopFullscreenMonitoring();
+
+    isMonitoring = true;
+
+    // 初始检查
+    isForegroundFullscreen = await isForegroundWindowFullscreenOrMaximized();
+    if (win && !win.isDestroyed()) {
+        win.webContents.send('foreground-fullscreen-changed', {isFullscreen: isForegroundFullscreen});
+    }
+
+    // 开始递归检查
+    checkFullscreenStatus();
+
+    console.log('[FullscreenMonitoring] Started monitoring with interval:', FULLSCREEN_CHECK_INTERVAL, 'ms');
+}
+
+function stopFullscreenMonitoring() {
+    isMonitoring = false;
+    if (fullscreenCheckTimer) {
+        clearTimeout(fullscreenCheckTimer);
+        fullscreenCheckTimer = null;
+        console.log('[FullscreenMonitoring] Stopped monitoring');
+    }
+}
+
 // 添加全局错误处理，防止未捕获的异常导致弹窗
 process.on('uncaughtException', (error) => {
     console.error('Uncaught Exception:', error);
@@ -124,196 +237,96 @@ function connect(rejectUnauthorized = true, resetErrorFlag = false) {
     const url = `${agreementWs}://${server}/ws/${classId}`
 
     try {
-
         // 关闭旧连接与心跳
-
         try {
-
             if (ws) {
-
                 ws.removeAllListeners();
-
                 ws.close();
-
             }
-
         } catch {
         }
-
         clearHeartbeat()
-
-
         ws = new WebSocket(url, [], {rejectUnauthorized})
-
-
         // 为WebSocket实例添加错误监听器，确保任何错误都不会导致弹窗
-
         // 重要：必须在WebSocket实例创建后立即添加错误监听器，以捕获所有错误
-
         ws.on('error', (error) => {
-
             console.error('WebSocket error:', error)
-
             clearHeartbeat()
-
-
             // 通知渲染进程连接已断开
-
-
             if (win && !win.isDestroyed()) {
-
-
                 win.webContents.send('ws-status', {connected: false});
-
-
                 // 同时更新tray tooltip
                 win.webContents.send('update-tray-status', {connected: false, status: '离线(弱网)'});
-
-
             }
 
 
             if (rejectUnauthorized) {
-
                 // 尝试连接不验证证书
-
                 console.log('Trying to connect without certificate verification...');
-
                 setTimeout(() => {
-
                     connect(false, false);
-
                 }, 100);
-
             } else {
-
                 // 已经尝试了不验证证书，现在安排重连
-
                 scheduleReconnect();
-
             }
-
         })
-
     } catch (err) {
-
         console.error('WebSocket create error:', err)
-
         // 不显示错误弹窗，仅重连
-
         scheduleReconnect();
-
         return
-
     }
 
 
     ws.on('open', () => {
-
         console.log('Connected to server')
-
         clearHeartbeat()
-
         reconnectAttempts = 0; // 连接成功，重置重连计数
-
-
         heartbeatTimer = setInterval(() => {
-
             if (ws && ws.readyState === WebSocket.OPEN) {
-
                 try {
-
                     ws.ping()
-
                 } catch (e) {
-
                     console.log('Heartbeat ping failed:', e?.message || e)
-
                 }
-
                 console.log('Heartbeat sent')
-
             } else {
-
                 console.log('Disconnected from server, No heartbeat sent')
-
             }
-
         }, 25000)
 
-
         // 重连成功后，主动拉取一次课表，避免丢失推送
-
         try {
-
             getScheduleFromCloud()
-
         } catch (e) {
-
             console.error('Failed to get schedule after reconnect:', e)
-
         }
-
-
         // 通知渲染进程连接已恢复
-
-
         if (win && !win.isDestroyed()) {
-
-
             win.webContents.send('ws-status', {connected: true});
-
-
             // 同时更新tray tooltip
-
-
             win.webContents.send('update-tray-status', {connected: true, status: '在线'});
-
-
         }
-
     })
-
-
     // 处理接收到的消息
-
     ws.on('message', (message) => {
-
         const text = message?.toString?.() ?? ''
-
         console.log('Received from server:', text)
-
         if (text === 'SyncConfig') {
-
             console.log('SyncConfig')
-
             getScheduleFromCloud()
-
         }
-
     })
-
-
     // 处理连接关闭
-
     ws.on('close', (code, reason) => {
-
         console.log(`WebSocket disconnected (code: ${code}, reason: ${reason})`)
-
         clearHeartbeat()
-
-
         // 通知渲染进程连接已断开
-
         if (win && !win.isDestroyed()) {
-
             win.webContents.send('ws-status', {connected: false});
-
         }
-
-
         // 无条件进行重连，不区分关闭原因
-
         scheduleReconnect();
 
     })
@@ -470,6 +483,8 @@ app.whenReady().then(() => {
         if (store.get("isFromCloud", false)) {
             setTimeout(getScheduleFromCloud, 5000)
         }
+        // 启动前台窗口全屏监听
+        startFullscreenMonitoring();
     })
     // powerMonitor 事件无 preventDefault
     electron.powerMonitor.on('suspend', () => {
@@ -481,6 +496,15 @@ app.whenReady().then(() => {
     const handle = win.getNativeWindowHandle();
     try { DisableMinimize(handle) } catch (e) { console.warn('DisableMinimize failed:', e?.message || e) }
     setAutoLaunch()
+})
+
+// 应用退出时停止监听
+app.on('will-quit', () => {
+    stopFullscreenMonitoring();
+})
+
+app.on('quit', () => {
+    stopFullscreenMonitoring();
 })
 
 // 仅提供读取用户配置的 IPC
