@@ -67,10 +67,10 @@
       "deleteAppDataOnUninstall": false,
       "include": "build/installer.nsh",
       "packElevateHelper": false,
-      "artifactName": "ElectronClassSchedule-Setup-${version}.${ext}"
+      "artifactName": "AstraSchedule-Setup-${version}.${ext}"
     },
     "portable": {
-      "artifactName": "ElectronClassSchedule-Portable-${version}.${ext}"
+      "artifactName": "AstraSchedule-Portable-${version}.${ext}"
     },
     "publish": [
       {
