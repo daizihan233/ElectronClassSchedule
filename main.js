@@ -1037,3 +1037,11 @@ ipcMain.on('setClass', (e, arg) => {
         }
     })
 })
+
+// 监听课程状态变化，转发给解冻窗口
+ipcMain.on('class-status-changed', (e, arg) => {
+    console.log('[Main] Class status changed:', arg);
+    if (unfreezeWin && !unfreezeWin.isDestroyed()) {
+        unfreezeWin.webContents.send('class-status-changed', arg);
+    }
+})

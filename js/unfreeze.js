@@ -23,6 +23,14 @@ let video = null;
 let isVideoPlaying = false;
 let hasUnfreezeCompleted = false;  // 是否已经完成解冻（用于检测解冻完成事件）
 
+// 课程状态相关
+let classStatus = {
+    type: null,      // 'current' | 'upcoming' | null
+    fullName: null,  // 课程全名
+    isEnd: false     // 是否已结束
+};
+let lastClassStatusType = null;  // 上一次的课程状态类型
+
 function parseTime(timeString) {
     return new Date(timeString).getTime();
 }
@@ -38,6 +46,55 @@ function hideImageLayers() {
     if (startLayer) startLayer.style.display = 'none';
     if (endLayer) endLayer.style.display = 'none';
 }
+
+// 检查是否应该禁用点击操作
+function shouldDisableClick() {
+    // 如果正在上课，且课程名不包含"元旦"，则禁用点击
+    if (classStatus.type === 'current' && classStatus.fullName && !classStatus.fullName.includes('元旦')) {
+        return true;
+    }
+    return false;
+}
+
+// 暂停所有播放
+function pauseAllPlayback() {
+    // 暂停音频
+    if (audio && isPlaying) {
+        audio.pause();
+        audio.currentTime = 0;
+        isPlaying = false;
+        console.log('[Unfreeze] Audio paused due to class status change');
+    }
+
+    // 暂停视频
+    if (video && isVideoPlaying) {
+        video.pause();
+        isVideoPlaying = false;
+        video.classList.remove('active');
+        showImageLayers();
+        console.log('[Unfreeze] Video paused due to class status change');
+    }
+}
+
+// 监听课程状态变化
+ipcRenderer.on('class-status-changed', (e, arg) => {
+    console.log('[Unfreeze] Class status changed:', arg);
+
+    // 保存旧的状态类型
+    const oldType = lastClassStatusType;
+
+    // 更新课程状态
+    classStatus.type = arg.type;
+    classStatus.fullName = arg.fullName;
+    classStatus.isEnd = arg.isEnd;
+    lastClassStatusType = arg.type;
+
+    // 检查是否从课间变为上课
+    if (oldType !== 'current' && arg.type === 'current') {
+        // 从课间变为上课，暂停所有播放
+        pauseAllPlayback();
+    }
+});
 
 function getUnfreezeProgress() {
     const now = Date.now();
@@ -159,6 +216,12 @@ function onUnfreezeComplete() {
 function handleImageClick(event) {
     console.log('[Unfreeze] handleImageClick, progress:', getUnfreezeProgress(), 'isPlaying:', isPlaying);
 
+    // 检查是否应该禁用点击
+    if (shouldDisableClick()) {
+        console.log('[Unfreeze] Click disabled due to class status');
+        return;
+    }
+
     // 切换播放/暂停状态
     if (isPlaying) {
         audio.pause();
@@ -174,6 +237,12 @@ function handleImageClick(event) {
 // 处理视频点击
 function handleVideoClick(event) {
     console.log('[Unfreeze] Video clicked, isVideoPlaying:', isVideoPlaying);
+
+    // 检查是否应该禁用点击
+    if (shouldDisableClick()) {
+        console.log('[Unfreeze] Click disabled due to class status');
+        return;
+    }
 
     if (isVideoPlaying) {
         // 暂停视频，切换回图片
@@ -252,6 +321,9 @@ function init() {
         // 开始动画循环
         updateAnimation();
     }
+
+    // 初始化课程状态
+    lastClassStatusType = classStatus.type;
 
     console.log('[Unfreeze] Animation started');
     console.log('[Unfreeze] Start time:', UNFREEZE_START_TIME);

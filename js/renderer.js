@@ -425,6 +425,13 @@ function tick(reset = false) {
         setCountdownerPosition()
         setSidebar()
         setBackgroundDisplay()
+
+        // 发送课程状态变化消息给主进程
+        ipcRenderer.send('class-status-changed', {
+            type: scheduleData.currentHighlight.type,
+            fullName: scheduleData.currentHighlight.fullName,
+            isEnd: scheduleData.currentHighlight.isEnd
+        });
     } else if (lastScheduleData.wsConnected !== wsConnected) {
         // 即使没有课程变化，如果连接状态变化，也需要更新颜色
         updateClassHighlightColors(wsConnected);
