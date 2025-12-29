@@ -63,7 +63,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "电子课表",
+      "shortcutName": "星程课表",
       "deleteAppDataOnUninstall": false,
       "include": "build/installer.nsh",
       "packElevateHelper": false,
