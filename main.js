@@ -441,7 +441,7 @@ const toggleUnfreezeWindow = (show) => {
     }
 };
 function setAutoLaunch() {
-    const shortcutName = '电子课表(请勿重命名).lnk'
+    const shortcutName = '星程(请勿重命名).lnk'
     app.setLoginItemSettings({ // backward compatible
         openAtLogin: false,
         openAsHidden: false
@@ -489,16 +489,16 @@ function setupAutoUpdater() {
         autoUpdater.on('checking-for-update', () => console.log('[Updater] checking-for-update'))
         autoUpdater.on('update-available', (info) => {
             console.log('[Updater] update-available', info?.version)
-            tray?.setToolTip(`电子课表 - 正在下载更新 ${info?.version || ''}`)
+            tray?.setToolTip(`星程 - 正在下载更新 ${info?.version || ''}`)
         })
         autoUpdater.on('update-not-available', () => console.log('[Updater] update-not-available'))
         autoUpdater.on('error', (err) => console.error('[Updater] error', err))
         autoUpdater.on('download-progress', (p) => {
             const percent = Math.floor(p.percent || 0)
-            tray?.setToolTip(`电子课表 - 更新下载中 ${percent}%`)
+            tray?.setToolTip(`星程 - 更新下载中 ${percent}%`)
         })
         autoUpdater.on('update-downloaded', () => {
-            tray?.setToolTip(`电子课表 - 更新可用`)
+            tray?.setToolTip(`星程 - 更新可用`)
             autoUpdater.quitAndInstall(true, true)
         })
         // 仅启动时检查一次
@@ -819,7 +819,7 @@ ipcMain.on('getWeekIndex', (e, arg) => {
     ]
     template[arg]?.checked !== undefined && (template[arg].checked = true)
     form = Menu.buildFromTemplate(template)
-    tray.setToolTip('电子课表 - by KuoHu - ' + app.getVersion())
+    tray.setToolTip('星程 - by KuoHu - ' + app.getVersion())
     function trayClicked() {
         tray.popUpContextMenu(form)
     }
@@ -948,7 +948,7 @@ ipcMain.on('RequestSyncConfig', () => {
 // 处理来自渲染进程的tray状态更新请求
 ipcMain.on('update-tray-status', (e, arg) => {
     if (tray) {
-        const baseTooltip = `电子课表 - by KuoHu - ${app.getVersion()}`
+        const baseTooltip = `星程 - by KuoHu - ${app.getVersion()}`
         const statusText = arg.connected ? '在线' : '离线(弱网)'
         tray.setToolTip(`${baseTooltip} - 状态: ${statusText}`)
         console.log('[Main] Tray tooltip updated to:', `${baseTooltip} - 状态: ${statusText}`)
