@@ -35,6 +35,7 @@
     "asar": true,
     "asarUnpack": [
       "js/scheduleConfig.js",
+      "js/unfreeze.js",
       "scripts/**/*",
       "unfreeze.html",
       "unfreeze.config.js"
