@@ -46,3 +46,19 @@ body {
     width: 100%;
     height: 100%;
 }
+
+.countdown {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    font-family: 'AlimamaDongFangDaKai', sans-serif;
+    font-size: 18px;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    white-space: nowrap;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 4px 12px;
+    border-radius: 12px;
+}

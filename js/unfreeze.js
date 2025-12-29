@@ -27,6 +27,34 @@ function getUnfreezeProgress() {
     }
 }
 
+function updateCountdown() {
+    const now = Date.now();
+    const endTime = parseTime(UNFREEZE_END_TIME);
+    const countdownEl = document.getElementById('countdown');
+
+    if (!countdownEl) return;
+
+    const remaining = endTime - now;
+
+    if (remaining <= 0) {
+        countdownEl.style.display = 'none';
+        return;
+    }
+
+    const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+
+    if (days > 0) {
+        countdownEl.textContent = `${days}天${hours}时${minutes}分`;
+    } else if (hours > 0) {
+        countdownEl.textContent = `${hours}时${minutes}分${seconds}秒`;
+    } else {
+        countdownEl.textContent = `${minutes}分${seconds}秒`;
+    }
+}
+
 function updateAnimation() {
     const progress = getUnfreezeProgress();
 
@@ -35,6 +63,8 @@ function updateAnimation() {
     // 当 progress = 1 时，完全隐藏（clip-path: inset(100% 0 0 0)）
     const clipValue = progress * 100;
     startLayer.style.clipPath = `inset(${clipValue}% 0 0 0)`;
+
+    updateCountdown();
 
     animationFrame = requestAnimationFrame(updateAnimation);
 }
