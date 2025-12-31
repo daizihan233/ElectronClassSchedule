@@ -1,4 +1,4 @@
-﻿const electron = require('electron');
+const electron = require('electron');
 const { app, BrowserWindow, Menu, ipcMain, dialog, screen, Tray, shell } = electron
 const path = require('node:path');
 const fs = require('node:fs')
