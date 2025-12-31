@@ -62,3 +62,19 @@ body {
     padding: 4px 12px;
     border-radius: 12px;
 }
+
+.video-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    display: none;
+    object-fit: contain;
+    cursor: pointer;
+}
+
+.video-layer.active {
+    display: block;
+}

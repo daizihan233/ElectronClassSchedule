@@ -31,7 +31,7 @@
   },
   "build": {
     "appId": "cn.khbit.classschedule",
-    "productName": "电子课表",
+    "productName": "星程课表",
     "asar": true,
     "asarUnpack": [
       "js/scheduleConfig.js",
