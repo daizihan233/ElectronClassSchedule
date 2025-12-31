@@ -1,4 +1,4 @@
-const electron = require('electron');
+﻿const electron = require('electron');
 const { app, BrowserWindow, Menu, ipcMain, dialog, screen, Tray, shell } = electron
 const path = require('node:path');
 const fs = require('node:fs')
@@ -374,72 +374,7 @@ const createWindow = () => {
     win.loadFile('index.html')
     if (store.get('isWindowAlwaysOnTop', true))
         win.setAlwaysOnTop(true, 'screen-saver', 9999999999999)
-
-    // 监听主窗口关闭事件，确保解冻窗口也被关闭
-    win.on('close', () => {
-        console.log('[Main] Main window closing, destroying unfreeze window');
-        if (unfreezeWin && !unfreezeWin.isDestroyed()) {
-            unfreezeWin.destroy();
-        }
-    });
 }
-
-// 创建刘德华解冻动画窗口
-let unfreezeWin = null;
-
-const createUnfreezeWindow = () => {
-    // noinspection JSCheckFunctionSignatures
-    unfreezeWin = new BrowserWindow({
-        width: 300,
-        height: 300,
-        x: undefined, // 自动计算右下角位置
-        y: undefined,
-        frame: false,
-        transparent: true,
-        alwaysOnTop: false, // 置底，不置顶
-        skipTaskbar: true, // 不在任务栏显示
-        resizable: false,
-        minimizable: false,
-        maximizable: false,
-        closable: true, // 允许关闭
-        show: false, // 初始隐藏
-        webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
-            enableRemoteModule: true
-        },
-    });
-
-    // 计算右下角位置
-    const {width, height} = screen.getPrimaryDisplay().workAreaSize;
-    unfreezeWin.setPosition(width - 300, height - 300);
-
-    // 设置窗口为置底
-    unfreezeWin.setAlwaysOnTop(false, 'desktop');
-
-    // noinspection JSIgnoredPromiseFromCall
-    unfreezeWin.loadFile('unfreeze.html');
-
-    // unfreezeWin.webContents.openDevTools();
-
-    console.log('[Unfreeze] Window created at bottom-right corner');
-};
-
-// 切换解冻窗口的显示/隐藏
-const toggleUnfreezeWindow = (show) => {
-    if (!unfreezeWin) {
-        console.warn('[Unfreeze] Window not initialized');
-        return;
-    }
-
-    if (show) {
-        unfreezeWin.show();
-        console.log('[Unfreeze] Window shown');
-    } else {
-        unfreezeWin.hide();
-        console.log('[Unfreeze] Window hidden');
-    }
-};
 function setAutoLaunch() {
     const shortcutName = '星程(请勿重命名).lnk'
     app.setLoginItemSettings({ // backward compatible
@@ -541,7 +476,6 @@ function getScheduleFromCloud() {
 }
 app.whenReady().then(() => {
     createWindow()
-    createUnfreezeWindow() // 创建刘德华解冻动画窗口
     Menu.setApplicationMenu(null)
     setupAutoUpdater()
     win.webContents.on('did-finish-load', () => {
@@ -559,15 +493,6 @@ app.whenReady().then(() => {
     electron.powerMonitor.on('shutdown', () => {
         app.quit()
     })
-
-    // 根据配置显示或隐藏解冻窗口
-    if (store.get('isUnfreezeEnabled', false)) {
-        setTimeout(() => {
-            if (unfreezeWin && !unfreezeWin.isDestroyed()) {
-                unfreezeWin.show();
-            }
-        }, 1000); // 延迟 1 秒显示，确保窗口创建完成
-    }
     const handle = win.getNativeWindowHandle();
     try { DisableMinimize(handle) } catch (e) { console.warn('DisableMinimize failed:', e?.message || e) }
     setAutoLaunch()
@@ -576,24 +501,10 @@ app.whenReady().then(() => {
 // 应用退出时停止监听
 app.on('will-quit', () => {
     stopFullscreenMonitoring();
-    // 关闭解冻窗口
-    unfreezeWin.quit();
 })
 
 app.on('quit', () => {
     stopFullscreenMonitoring();
-    // 关闭解冻窗口
-    if (unfreezeWin && !unfreezeWin.isDestroyed()) {
-        unfreezeWin.quit();
-    }
-})
-
-// 监听主窗口关闭事件，确保解冻窗口也被关闭
-app.on('window-all-closed', () => {
-    // 关闭解冻窗口
-    if (unfreezeWin && !unfreezeWin.isDestroyed()) {
-        unfreezeWin.quit();
-    }
 })
 
 // 仅提供读取用户配置的 IPC
@@ -780,15 +691,6 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             click: (e) => {
                 store.set('isDuringClassHidden', e.checked)
                 win.webContents.send('ClassHidden', e.checked)
-            }
-        },
-        {
-            label: '解冻动画',
-            type: 'checkbox',
-            checked: store.get('isUnfreezeEnabled', false),
-            click: (e) => {
-                store.set('isUnfreezeEnabled', e.checked)
-                toggleUnfreezeWindow(e.checked)
             }
         },
         {
@@ -1036,12 +938,4 @@ ipcMain.on('setClass', (e, arg) => {
         } catch {
         }
     })
-})
-
-// 监听课程状态变化，转发给解冻窗口
-ipcMain.on('class-status-changed', (e, arg) => {
-    console.log('[Main] Class status changed:', arg);
-    if (unfreezeWin && !unfreezeWin.isDestroyed()) {
-        unfreezeWin.webContents.send('class-status-changed', arg);
-    }
 })

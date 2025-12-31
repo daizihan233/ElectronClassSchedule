@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "electron_class_schedule",
   "version": "2147483647.1.0",
   "description": "classSchedule",
@@ -35,10 +35,7 @@
     "asar": true,
     "asarUnpack": [
       "js/scheduleConfig.js",
-      "js/unfreeze.js",
-      "scripts/**/*",
-      "unfreeze.html",
-      "unfreeze.config.js"
+      "scripts/**/*"
     ],
     "directories": {
       "buildResources": "build-resources"

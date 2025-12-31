@@ -1,4 +1,4 @@
-let weekIndex = localStorage.getItem('weekIndex')
+﻿let weekIndex = localStorage.getItem('weekIndex')
 if (weekIndex === null) localStorage.setItem('weekIndex', '0')
 weekIndex = Number(localStorage.getItem('weekIndex'))
 
@@ -93,7 +93,6 @@ function getScheduleData() {
     const divider = scheduleConfig.divider[timetable];
     let scheduleArray = [];
     let currentHighlight = { index: null, type: null, fullName: null, countdown: null, countdownText: null };
-    let nextScheduleName = null; // 下一个日程的名称
 
     const timeRanges = Object.keys(dayTimetable);
 
@@ -116,26 +115,6 @@ function getScheduleData() {
         }
         // 兜底课间标签
         if (!breakLabel) breakLabel = (scheduleConfig['break_label']) || '课间';
-
-        // 获取下一个日程的名称
-        for (let i = breakIndex + 1; i < timeRanges.length; i++) {
-            const nextTimeRange = timeRanges[i];
-            const nextVal = dayTimetable[nextTimeRange];
-            if (nextVal !== undefined && nextVal !== null) {
-                if (typeof nextVal === 'number') {
-                    // 如果是课程，获取课程名称
-                    const subjectShortName = currentSchedule[nextVal];
-                    if (subjectShortName && scheduleConfig.subject_name[subjectShortName]) {
-                        nextScheduleName = scheduleConfig.subject_name[subjectShortName];
-                        break;
-                    }
-                } else {
-                    // 如果是课间（字符串），直接使用
-                    nextScheduleName = String(nextVal);
-                    break;
-                }
-            }
-        }
 
         // 选择下一节课用于定位 upcoming 的 index
         for (let i = breakIndex + 1; i < timeRanges.length; i++) {
@@ -204,7 +183,7 @@ function getScheduleData() {
         }
     }
 
-    return {scheduleArray, currentHighlight, timetable, divider, nextScheduleName};
+    return {scheduleArray, currentHighlight, timetable, divider};
 }
 
 

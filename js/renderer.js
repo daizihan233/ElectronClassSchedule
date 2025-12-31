@@ -1,4 +1,4 @@
-const { ipcRenderer } = require('electron');
+﻿const { ipcRenderer } = require('electron');
 
 // 新增：深合并与用户配置加载/保存
 function isPlainObject(x) {
@@ -71,8 +71,7 @@ let lastScheduleData = {
     },
     scheduleArray: [null, null, null],
     timetable: null,
-    divider: [null, null],
-    nextScheduleName: null
+    divider: [null, null]
 }
 
 // 解析 YYYY-MM-DD（或 YYYY-M-D）为本地时区日期（00:00），避免被当作 UTC 解析
@@ -337,8 +336,8 @@ function setCountdownerContent() {
         miniCountdown.style.display = 'block'
         if (globalContainer) globalContainer.style.display = 'none'
         const currentClassColor = wsConnected ? 'rgba(255, 255, 5, 1)' : 'rgba(255, 165, 0, 1)';
-        const nextClass = scheduleData.nextScheduleName || '明天';
-        miniCountdown.innerHTML = `<div class="currentClass" style="color: ${currentClassColor}">${scheduleData.currentHighlight.fullName}</div><div class="countdown" style="margin-left:5px">${scheduleData.currentHighlight.countdownText}</div> | 下一节：<span class="class upcoming" id="highlighted">${nextClass}</span>`
+        const nextClass = scheduleData.currentHighlight.fullName || '课间';
+        miniCountdown.innerHTML = `<div class="currentClass" style="color: ${currentClassColor}">${nextClass}</div><div class="countdown" style="margin-left:5px">${scheduleData.currentHighlight.countdownText}</div>`
     } else {
         countdownContainer.style.display = 'block';
         miniCountdown.style.display = 'none'
@@ -425,13 +424,6 @@ function tick(reset = false) {
         setCountdownerPosition()
         setSidebar()
         setBackgroundDisplay()
-
-        // 发送课程状态变化消息给主进程
-        ipcRenderer.send('class-status-changed', {
-            type: scheduleData.currentHighlight.type,
-            fullName: scheduleData.currentHighlight.fullName,
-            isEnd: scheduleData.currentHighlight.isEnd
-        });
     } else if (lastScheduleData.wsConnected !== wsConnected) {
         // 即使没有课程变化，如果连接状态变化，也需要更新颜色
         updateClassHighlightColors(wsConnected);
