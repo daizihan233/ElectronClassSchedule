@@ -349,8 +349,15 @@ function setCountdownerPosition() {
     let offset = {};
     const dividerWidth = Number(getComputedStyle(root).getPropertyValue('--divider-width').replace('px', ''));
     const dividerMargin = Number(getComputedStyle(root).getPropertyValue('--divider-margin').replace('px', ''));
-    if (countdownContainer.style.display !== 'none')
-        cacheCountdownContainerOffsetWidth = countdownContainer.offsetWidth
+    // 获取容器宽度，如果容器是隐藏的，临时显示它以获取正确的宽度
+    if (countdownContainer.style.display === 'none') {
+        const originalDisplay = countdownContainer.style.display;
+        countdownContainer.style.display = 'block';
+        cacheCountdownContainerOffsetWidth = countdownContainer.offsetWidth;
+        countdownContainer.style.display = originalDisplay;
+    } else {
+        cacheCountdownContainerOffsetWidth = countdownContainer.offsetWidth;
+    }
     let highlightElement = document.getElementById('highlighted');
     if (!highlightElement) return;
 
@@ -381,8 +388,19 @@ function setCountdownerPosition() {
         };
     }
 
+    // 临时禁用过渡效果，避免初始位置设置时触发动画
+    const originalTransition = countdownContainer.style.transition;
+    countdownContainer.style.transition = 'none';
+
     countdownContainer.style.left = offset.x + 'px';
     countdownContainer.style.top = offset.y + 'px';
+    countdownContainer.style.transform = 'none';
+
+    // 强制重绘，确保位置立即生效
+    countdownContainer.offsetHeight;
+
+    // 恢复过渡效果
+    countdownContainer.style.transition = originalTransition;
 }
 
 function setSidebar() {
@@ -421,7 +439,10 @@ function tick(reset = false) {
         scheduleData.currentHighlight.fullName !== lastScheduleData.currentHighlight.fullName ||
         scheduleData.currentHighlight.type !== lastScheduleData.currentHighlight.type || reset) {
         setScheduleClass()
-        setCountdownerPosition()
+        // 使用 requestAnimationFrame 确保 DOM 完全渲染后再计算位置
+        requestAnimationFrame(() => {
+            setCountdownerPosition()
+        })
         setSidebar()
         setBackgroundDisplay()
     } else if (lastScheduleData.wsConnected !== wsConnected) {
@@ -466,7 +487,15 @@ async function initDomAndStart() {
     bannerText = document.getElementById('bannerText')
     banner = document.getElementById('banner')
     root = document.querySelector(':root');
-    cacheCountdownContainerOffsetWidth = countdownContainer?.offsetWidth || 0
+    // 临时显示容器以获取正确的 offsetWidth
+    const originalDisplay = countdownContainer?.style?.display || '';
+    if (countdownContainer) {
+        countdownContainer.style.display = 'block';
+        cacheCountdownContainerOffsetWidth = countdownContainer.offsetWidth;
+        countdownContainer.style.display = originalDisplay;
+    } else {
+        cacheCountdownContainerOffsetWidth = 0;
+    }
 
     // 初始化跑马灯能力（此顺序确保 start/stop 方法存在）
     initBannerMarquee();
@@ -564,6 +593,12 @@ async function initDomAndStart() {
 
     // 尝试应用一次 banner，以处理初始化前产生的更新
     setBanner();
+
+    // 初始化 countdownContainer 的位置为居中，避免动画从左侧开始
+    if (countdownContainer && classContainer) {
+        countdownContainer.style.left = '50%';
+        countdownContainer.style.transform = 'translateX(-50%)';
+    }
 
     // 启动心跳渲染（在合并配置后再启动）
     scheduleNextTick();

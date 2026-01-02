@@ -16,7 +16,24 @@ const store = new Store();
 const isForegroundWindowFullscreenOrMaximized = () => {
     return new Promise((resolve) => {
         const {exec} = require('child_process');
-        const psScriptPath = path.join(__dirname, 'scripts', 'check-foreground-fullscreen.ps1');
+
+        // 兼容开发模式和编译后的环境
+        // 在编译后，scripts 目录会被解包到 app.asar.unpacked
+        let psScriptPath;
+        if (app.isPackaged) {
+            // 编译后的应用，尝试从 app.asar.unpacked 获取
+            const appPath = app.getAppPath();
+            if (appPath.includes('app.asar')) {
+                psScriptPath = path.join(path.dirname(appPath), 'app.asar.unpacked', 'scripts', 'check-foreground-fullscreen.ps1');
+            } else {
+                psScriptPath = path.join(__dirname, 'scripts', 'check-foreground-fullscreen.ps1');
+            }
+        } else {
+            // 开发模式
+            psScriptPath = path.join(__dirname, 'scripts', 'check-foreground-fullscreen.ps1');
+        }
+
+        console.log('[FullscreenDetection] Script path:', psScriptPath);
 
         // 检查脚本文件是否存在
         if (!fs.existsSync(psScriptPath)) {
@@ -67,7 +84,7 @@ const isForegroundWindowFullscreenOrMaximized = () => {
 let isForegroundFullscreen = false;
 let fullscreenCheckTimer = null;
 let isMonitoring = false;
-const FULLSCREEN_CHECK_INTERVAL = 2000; // 每 2000ms (2秒) 检查一次，降低频率以减少性能影响
+const FULLSCREEN_CHECK_INTERVAL = 1000;
 
 async function checkFullscreenStatus() {
     if (!isMonitoring) return;
