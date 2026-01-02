@@ -433,7 +433,7 @@ function setupAutoUpdater() {
         if (updaterInitialized) return
         const { autoUpdater } = require('electron-updater')
         // 默认镜像地址（latest.yml 与安装包所在目录）- 适配 GitHub 最新发布路径
-        const defaultMirror = 'https://hubproxy.khbit.cn/https://github.com/daizihan233/ElectronClassSchedule/releases/latest/download'
+        const defaultMirror = 'https://hubproxy.khbit.cn/https://github.com/daizihan233/AstraSchedule/releases/latest/download'
         let updateBaseUrl = store.get('updateBaseUrl')
         if (!updateBaseUrl || typeof updateBaseUrl !== 'string' || updateBaseUrl.trim().length === 0) {
             updateBaseUrl = defaultMirror
@@ -678,7 +678,7 @@ ipcMain.on('getWeekIndex', (e, arg) => {
             icon: asset('image', 'github.png'),
             label: '源码仓库',
             click: () => {
-                shell.openExternal('https://github.com/daizihan233/ElectronClassSchedule').then(doNothing);
+                shell.openExternal('https://github.com/daizihan233/AstraSchedule').then(doNothing);
             }
         },
         {
