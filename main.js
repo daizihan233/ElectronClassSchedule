@@ -89,6 +89,11 @@ const FULLSCREEN_CHECK_INTERVAL = 1000;
 async function checkFullscreenStatus() {
     if (!isMonitoring) return;
 
+    // 如果不需要检测全屏状态（例如：上课隐藏且处于上课状态），则跳过检测
+    if (!shouldDetectFullscreen) {
+        return;
+    }
+
     try {
         const currentStatus = await isForegroundWindowFullscreenOrMaximized();
 
@@ -871,6 +876,21 @@ ipcMain.on('update-tray-status', (e, arg) => {
         const statusText = arg.connected ? '在线' : '离线(弱网)'
         tray.setToolTip(`${baseTooltip} - 状态: ${statusText}`)
         console.log('[Main] Tray tooltip updated to:', `${baseTooltip} - 状态: ${statusText}`)
+    }
+})
+
+// 接收渲染进程的全屏检测状态
+let shouldDetectFullscreen = true;
+ipcMain.on('fullscreen-detection-state', (e, arg) => {
+    const prevShouldDetect = shouldDetectFullscreen;
+    shouldDetectFullscreen = arg.shouldDetect;
+    console.log('[Main] Fullscreen detection state changed:', shouldDetectFullscreen);
+
+    // 如果状态从不需要检测变为需要检测，立即执行一次检测
+    if (!prevShouldDetect && shouldDetectFullscreen && isMonitoring) {
+        checkFullscreenStatus().catch(err => {
+            console.error('[Main] Error in immediate fullscreen check:', err);
+        });
     }
 })
 

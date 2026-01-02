@@ -93,6 +93,7 @@ function getScheduleData() {
     const divider = scheduleConfig.divider[timetable];
     let scheduleArray = [];
     let currentHighlight = { index: null, type: null, fullName: null, countdown: null, countdownText: null };
+    let nextScheduleName = null; // 下一节课的名称
 
     const timeRanges = Object.keys(dayTimetable);
 
@@ -121,6 +122,9 @@ function getScheduleData() {
             const nextTimeRange = timeRanges[i];
             const nextClassIndex = dayTimetable[nextTimeRange];
             if (typeof nextClassIndex === 'number') {
+                // 获取下一节课的名称
+                const nextSubjectShortName = currentSchedule[nextClassIndex];
+                nextScheduleName = scheduleConfig.subject_name[nextSubjectShortName];
                 // scheduleArray.length 指向下一节在列表中的位置
                 setCurrentHighlightExternal(
                     currentHighlight,
@@ -174,6 +178,16 @@ function getScheduleData() {
 
             if (isClassCurrent(startTime, endTime, currentTime)) {
                 setCurrentHighlightExternal(currentHighlight, scheduleArray.length - 1, 'current', subjectFullName, endTime, currentTime);
+                // 查找下一节课的名称
+                for (let i = index + 1; i < timeRanges.length; i++) {
+                    const nextTimeRange = timeRanges[i];
+                    const nextClassIndex = dayTimetable[nextTimeRange];
+                    if (typeof nextClassIndex === 'number') {
+                        const nextSubjectShortName = currentSchedule[nextClassIndex];
+                        nextScheduleName = scheduleConfig.subject_name[nextSubjectShortName];
+                        break;
+                    }
+                }
             }
         } else if (currentHighlight.index === null && isBreakTime(startTime, endTime, currentTime)) {
             // 课间：寻找下一节课
@@ -183,7 +197,20 @@ function getScheduleData() {
         }
     }
 
-    return {scheduleArray, currentHighlight, timetable, divider};
+    // 如果没有找到当前课程或课间，尝试设置下一节课的名称
+    if (currentHighlight.index === null && nextScheduleName === null) {
+        // 查找第一节课作为下一节课
+        for (const [index, timeRange] of timeRanges.entries()) {
+            const classIndex = dayTimetable[timeRange];
+            if (typeof classIndex === 'number') {
+                const subjectShortName = currentSchedule[classIndex];
+                nextScheduleName = scheduleConfig.subject_name[subjectShortName];
+                break;
+            }
+        }
+    }
+
+    return {scheduleArray, currentHighlight, timetable, divider, nextScheduleName};
 }
 
 

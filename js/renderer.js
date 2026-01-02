@@ -336,8 +336,8 @@ function setCountdownerContent() {
         miniCountdown.style.display = 'block'
         if (globalContainer) globalContainer.style.display = 'none'
         const currentClassColor = wsConnected ? 'rgba(255, 255, 5, 1)' : 'rgba(255, 165, 0, 1)';
-        const nextClass = scheduleData.currentHighlight.fullName || '课间';
-        miniCountdown.innerHTML = `<div class="currentClass" style="color: ${currentClassColor}">${nextClass}</div><div class="countdown" style="margin-left:5px">${scheduleData.currentHighlight.countdownText}</div>`
+        const nextClass = scheduleData.nextScheduleName || '明天';  // “明天” 意味着今天的课程已经结束
+        miniCountdown.innerHTML = `<div class="currentClass" style="color: ${currentClassColor}">${scheduleData.currentHighlight.fullName}</div><div class="countdown" style="margin-left:5px">${scheduleData.currentHighlight.countdownText}</div> | 下一节：<span class="class upcoming" id="highlighted">${nextClass}</span>`
     } else {
         countdownContainer.style.display = 'block';
         miniCountdown.style.display = 'none'
@@ -445,6 +445,8 @@ function tick(reset = false) {
         })
         setSidebar()
         setBackgroundDisplay()
+        // 课程状态变化时，通知主进程更新全屏检测状态
+        notifyMainProcessDetectionState();
     } else if (lastScheduleData.wsConnected !== wsConnected) {
         // 即使没有课程变化，如果连接状态变化，也需要更新颜色
         updateClassHighlightColors(wsConnected);
@@ -453,6 +455,24 @@ function tick(reset = false) {
     // noinspection JSUnresolvedReference
     lastScheduleData = $.extend(true, {}, scheduleData);
     lastScheduleData.wsConnected = wsConnected; // 保存连接状态用于比较
+}
+
+// 通知主进程当前是否应该检测全屏状态
+// 当开启"上课隐藏"且处于上课状态时，不需要检测全屏
+// 只在状态真正改变时才发送 IPC 消息
+let lastShouldDetectFullscreen = null;
+
+function notifyMainProcessDetectionState() {
+    try {
+        const shouldDetect = !(isClassHidden && scheduleData.currentHighlight.type === 'current');
+        // 只在状态真正改变时才发送 IPC 消息
+        if (shouldDetect !== lastShouldDetectFullscreen) {
+            lastShouldDetectFullscreen = shouldDetect;
+            ipcRenderer.send('fullscreen-detection-state', {shouldDetect});
+        }
+    } catch (e) {
+        console.error('[Renderer] Failed to notify main process about detection state:', e);
+    }
 }
 
 // 使用对齐系统秒的调度，避免 20ms 轮询
